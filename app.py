@@ -53,7 +53,7 @@ ELEMENT_DEFAULTS = {
         "radius": 8,
     },
     "list": {"items": "Item pertama\nItem kedua\nItem ketiga", "style": "bullet"},
-    "input": {"label": "Nama", "placeholder": "Ketik di sini"},
+    "input": {"label": "Nama", "placeholder": "Ketik di sini", "kind": "text"},
     "card": {"title": "Judul kartu", "text": "Isi singkat kartu."},
     "divider": {},
     "spacer": {"height": 24},
@@ -76,6 +76,14 @@ DEVICES = {
 
 PANEL_HEIGHT = 780
 
+INPUT_KINDS = {
+    "text": "Teks",
+    "email": "Email",
+    "password": "Kata sandi",
+    "number": "Angka",
+    "tel": "Telepon",
+}
+
 
 # ---------------------------------------------------------------------------
 # State
@@ -90,7 +98,7 @@ def default_design():
             "font": "Sans-serif modern",
             "width": 720,
         },
-        "pages": [{"name": "Beranda", "elements": []}],
+        "pages": [{"id": uuid.uuid4().hex[:8], "name": "Beranda", "elements": []}],
     }
 
 
@@ -160,7 +168,7 @@ def duplicate_element(index):
 
 def add_page():
     pages = st.session_state.design["pages"]
-    pages.append({"name": f"Halaman {len(pages) + 1}", "elements": []})
+    pages.append({"id": uuid.uuid4().hex[:8], "name": f"Halaman {len(pages) + 1}", "elements": []})
     st.session_state.page_idx = len(pages) - 1
     st.session_state.selected_id = None
 
@@ -192,6 +200,7 @@ def valid_design(data):
         assert isinstance(data["pages"], list) and data["pages"]
         for page in data["pages"]:
             assert isinstance(page["name"], str)
+            page.setdefault("id", uuid.uuid4().hex[:8])
             for el in page["elements"]:
                 assert el["type"] in ELEMENT_LABELS
                 el.setdefault("id", uuid.uuid4().hex[:8])
@@ -202,6 +211,467 @@ def valid_design(data):
         return True
     except (KeyError, TypeError, AssertionError):
         return False
+
+
+# ---------------------------------------------------------------------------
+# Template desain siap pakai
+# ---------------------------------------------------------------------------
+def mk(el_type, **props):
+    el = {"type": el_type}
+    el.update(copy.deepcopy(ELEMENT_DEFAULTS[el_type]))
+    el.update(props)
+    return el
+
+
+def pic(seed, w=800, h=400):
+    return f"https://picsum.photos/seed/{seed}/{w}/{h}"
+
+
+def H(text, size=32, align="left"):
+    return mk("heading", text=text, size=size, align=align)
+
+
+def P(text, align="left"):
+    return mk("text", text=text, align=align)
+
+
+def B(text, link="", align="left"):
+    return mk("button", text=text, link=link, align=align)
+
+
+def IMG(seed, alt, radius=12, w=800, h=400):
+    return mk("image", url=pic(seed, w, h), alt=alt, radius=radius)
+
+
+def GAL(seeds, cols=3, radius=8):
+    return mk("gallery", urls="\n".join(pic(s, 400, 300) for s in seeds), columns=cols, radius=radius)
+
+
+def LST(items, style="bullet"):
+    return mk("list", items="\n".join(items), style=style)
+
+
+def INP(label, placeholder="", kind="text"):
+    return mk("input", label=label, placeholder=placeholder, kind=kind)
+
+
+def CARD(title, text):
+    return mk("card", title=title, text=text)
+
+
+def DIV():
+    return mk("divider")
+
+
+def SPC(height=24):
+    return mk("spacer", height=height)
+
+
+def NAV(brand, links):
+    return mk("navbar", brand=brand, links="\n".join(f"{a}|{b}" for a, b in links))
+
+
+def FOOT(text):
+    return mk("footer", text=text)
+
+
+def theme_of(primary, bg, text, font="Sans-serif modern", width=720):
+    return {"primary": primary, "bg": bg, "text": text, "font": font, "width": width}
+
+
+TEMPLATES = {
+    "landing_produk": {
+        "name": "Landing page produk",
+        "category": "Bisnis",
+        "desc": "Halaman promosi satu layar: hero, tiga fitur, dan ajakan mendaftar.",
+        "title": "Nusa Keuangan",
+        "theme": theme_of("#4f46e5", "#ffffff", "#111827", width=760),
+        "pages": [{"name": "Beranda", "elements": [
+            NAV("Nusa Keuangan", [("Fitur", "#"), ("Harga", "#"), ("Kontak", "#")]),
+            SPC(16),
+            H("Kelola uang harian dengan lebih tenang", 40, "center"),
+            P("Catat pemasukan dan pengeluaran, lihat laporan otomatis, semuanya dari satu aplikasi.", "center"),
+            B("Coba gratis", "#", "center"),
+            IMG("finance", "Tampilan aplikasi"),
+            H("Fitur utama", 28),
+            CARD("Catatan cepat", "Tambah transaksi dalam hitungan detik, tanpa formulir panjang."),
+            CARD("Laporan otomatis", "Ringkasan mingguan dan bulanan tanpa perlu spreadsheet."),
+            CARD("Data aman", "Semua catatan tersimpan terenkripsi di perangkatmu."),
+            DIV(),
+            H("Siap mulai?", 28, "center"),
+            B("Unduh sekarang", "#", "center"),
+            FOOT("© 2026 Nusa Keuangan"),
+        ]}],
+    },
+    "faq": {
+        "name": "FAQ dan bantuan",
+        "category": "Bisnis",
+        "desc": "Pertanyaan yang sering diajukan dalam bentuk kartu, lengkap dengan tombol kontak.",
+        "title": "Pusat Bantuan",
+        "theme": theme_of("#059669", "#ffffff", "#064e3b", width=680),
+        "pages": [{"name": "Bantuan", "elements": [
+            H("Pertanyaan yang sering diajukan", 34),
+            P("Jawaban cepat untuk hal-hal yang paling sering ditanyakan pelanggan."),
+            CARD("Bagaimana cara memesan?", "Pilih produk, isi alamat, lalu bayar. Pesanan diproses di hari yang sama."),
+            CARD("Berapa lama pengiriman?", "Biasanya 2 sampai 4 hari kerja, tergantung kota tujuan."),
+            CARD("Apakah barang bisa dikembalikan?", "Bisa, maksimal 7 hari setelah barang diterima dan dalam kondisi utuh."),
+            CARD("Metode pembayaran apa saja?", "Transfer bank, dompet digital, dan bayar di tempat untuk area tertentu."),
+            DIV(),
+            H("Masih bingung?", 24),
+            B("Hubungi kami", "#"),
+            FOOT("Layanan pelanggan: setiap hari 08.00 sampai 20.00"),
+        ]}],
+    },
+    "kontak": {
+        "name": "Halaman kontak",
+        "category": "Bisnis",
+        "desc": "Formulir pesan sederhana dan informasi kontak.",
+        "title": "Hubungi Kami",
+        "theme": theme_of("#2563eb", "#ffffff", "#1e293b", width=560),
+        "pages": [{"name": "Kontak", "elements": [
+            H("Hubungi kami", 36),
+            P("Tulis pesanmu dan tim kami akan membalas dalam 1 x 24 jam."),
+            INP("Nama lengkap", "Nama kamu"),
+            INP("Email", "nama@email.com", "email"),
+            INP("Pesan", "Apa yang ingin kamu tanyakan?"),
+            B("Kirim pesan"),
+            DIV(),
+            H("Informasi lain", 22),
+            LST(["Alamat: Jl. Contoh No. 10", "Telepon: 0812-0000-0000", "Email: halo@contoh.id"]),
+            FOOT("© 2026 Contoh Usaha"),
+        ]}],
+    },
+    "promo_app": {
+        "name": "Promosi aplikasi mobile",
+        "category": "Aplikasi",
+        "desc": "Halaman sempit ala ponsel untuk mempromosikan aplikasi dan tombol unduh.",
+        "title": "BelanjaKu",
+        "theme": theme_of("#db2777", "#fff1f2", "#4c0519", width=480),
+        "pages": [{"name": "Beranda", "elements": [
+            H("Belanja hemat di genggaman", 34, "center"),
+            IMG("shopping", "Aplikasi BelanjaKu", 24, 600, 400),
+            P("Ribuan promo harian, gratis ongkir, dan cashback langsung di ponselmu.", "center"),
+            LST(["Voucher baru setiap hari", "Lacak pesanan secara langsung", "Bayar dengan satu ketukan"]),
+            B("Unduh di Play Store", "#", "center"),
+            B("Unduh di App Store", "#", "center"),
+            FOOT("© 2026 BelanjaKu"),
+        ]}],
+    },
+    "login": {
+        "name": "Masuk dan daftar",
+        "category": "Aplikasi",
+        "desc": "Dua halaman: formulir masuk dan formulir pendaftaran.",
+        "title": "Akun Saya",
+        "theme": theme_of("#4f46e5", "#f9fafb", "#111827", width=420),
+        "pages": [
+            {"name": "Masuk", "elements": [
+                SPC(24),
+                H("Selamat datang kembali", 30, "center"),
+                P("Masuk untuk melanjutkan.", "center"),
+                INP("Email", "nama@email.com", "email"),
+                INP("Kata sandi", "Masukkan kata sandi", "password"),
+                B("Masuk"),
+                P("Belum punya akun? Buka halaman Daftar.", "center"),
+            ]},
+            {"name": "Daftar", "elements": [
+                SPC(24),
+                H("Buat akun baru", 30, "center"),
+                P("Hanya butuh satu menit.", "center"),
+                INP("Nama lengkap", "Nama kamu"),
+                INP("Email", "nama@email.com", "email"),
+                INP("Kata sandi", "Minimal 8 karakter", "password"),
+                B("Daftar"),
+            ]},
+        ],
+    },
+    "coming_soon": {
+        "name": "Segera hadir",
+        "category": "Aplikasi",
+        "desc": "Halaman tema gelap untuk mengumpulkan email sebelum peluncuran.",
+        "title": "Segera Hadir",
+        "theme": theme_of("#0284c7", "#0f172a", "#f8fafc", width=520),
+        "pages": [{"name": "Beranda", "elements": [
+            SPC(80),
+            H("Segera hadir", 52, "center"),
+            P("Kami sedang menyiapkan sesuatu yang baru. Tinggalkan emailmu untuk jadi yang pertama tahu.", "center"),
+            INP("Email", "nama@email.com", "email"),
+            B("Beri tahu saya", "", "center"),
+            SPC(40),
+            FOOT("Peluncuran: kuartal pertama 2027"),
+        ]}],
+    },
+    "katalog_kopi": {
+        "name": "Katalog produk",
+        "category": "Toko dan kuliner",
+        "desc": "Etalase produk dengan galeri foto, kartu harga, dan tombol pesan.",
+        "title": "Kopi Nusantara",
+        "theme": theme_of("#ea580c", "#fffbeb", "#292524", width=840),
+        "pages": [{"name": "Katalog", "elements": [
+            NAV("Kopi Nusantara", [("Katalog", "#"), ("Cara pesan", "#"), ("Kontak", "#")]),
+            SPC(8),
+            H("Biji kopi pilihan dari berbagai daerah", 36),
+            P("Disangrai segar setiap minggu dan dikirim ke seluruh Indonesia."),
+            GAL(["coffee1", "coffee2", "coffee3"], 3),
+            CARD("Arabika Gayo", "Rp 85.000 per 250 gr. Aroma floral dengan asam yang lembut."),
+            CARD("Robusta Lampung", "Rp 60.000 per 250 gr. Pahit tegas dan body tebal."),
+            CARD("Toraja Sapan", "Rp 95.000 per 250 gr. Rasa rempah dengan sentuhan cokelat."),
+            B("Pesan sekarang", "#", "center"),
+            FOOT("Pengiriman setiap Senin dan Kamis"),
+        ]}],
+    },
+    "menu_restoran": {
+        "name": "Menu restoran",
+        "category": "Toko dan kuliner",
+        "desc": "Halaman warung atau restoran: menu favorit, jam buka, dan tombol pesan.",
+        "title": "Warung Bu Sari",
+        "theme": theme_of("#b45309", "#fff7ed", "#431407", "Serif klasik", 720),
+        "pages": [{"name": "Menu", "elements": [
+            NAV("Warung Bu Sari", [("Menu", "#"), ("Lokasi", "#"), ("Pesan", "#")]),
+            SPC(8),
+            H("Masakan rumahan, rasa juara", 40, "center"),
+            IMG("food", "Hidangan warung", 12),
+            H("Menu favorit", 28),
+            LST([
+                "Nasi gudeg komplit: Rp 28.000",
+                "Ayam bakar madu: Rp 32.000",
+                "Soto betawi: Rp 30.000",
+                "Es teh manis: Rp 6.000",
+            ]),
+            DIV(),
+            H("Jam buka", 24),
+            P("Setiap hari, pukul 08.00 sampai 21.00."),
+            B("Pesan sekarang", "#", "center"),
+            FOOT("Terima pesanan katering minimal 20 porsi"),
+        ]}],
+    },
+    "harga_umkm": {
+        "name": "Daftar harga UMKM",
+        "category": "Toko dan kuliner",
+        "desc": "Daftar harga dan cara pesan untuk usaha rumahan.",
+        "title": "Kue Basah Bu Lina",
+        "theme": theme_of("#16a34a", "#f0fdf4", "#14532d", width=640),
+        "pages": [{"name": "Harga", "elements": [
+            H("Kue basah Bu Lina", 36, "center"),
+            P("Dibuat segar setiap pagi tanpa pengawet. Pesan H-1 ya.", "center"),
+            IMG("cake", "Aneka kue basah", 16),
+            H("Daftar harga", 26),
+            LST([
+                "Risoles isi ragout: Rp 3.500 per buah",
+                "Lemper ayam: Rp 3.000 per buah",
+                "Kue lapis: Rp 2.500 per potong",
+                "Paket arisan (30 pcs): Rp 90.000",
+            ]),
+            H("Cara pesan", 26),
+            LST(["Pilih kue dan jumlahnya", "Kirim pesanan lewat WhatsApp", "Bayar saat kue diantar"], "number"),
+            B("Pesan lewat WhatsApp", "#", "center"),
+            FOOT("Antar gratis area dalam kota"),
+        ]}],
+    },
+    "portofolio": {
+        "name": "Portofolio pribadi",
+        "category": "Pribadi",
+        "desc": "Tiga halaman: perkenalan, proyek dengan galeri, dan formulir kontak.",
+        "title": "Rani Maharani",
+        "theme": theme_of("#0f766e", "#fafaf9", "#1c1917", "Serif klasik", 720),
+        "pages": [
+            {"name": "Beranda", "elements": [
+                SPC(16),
+                H("Halo, saya Rani", 44),
+                P("Desainer grafis dan ilustrator. Saya membantu merek kecil tampil rapi dan mudah diingat."),
+                IMG("portrait", "Foto Rani", 16),
+                B("Lihat proyek", "#"),
+            ]},
+            {"name": "Proyek", "elements": [
+                H("Proyek pilihan", 34),
+                GAL(["design1", "design2", "design3", "design4"], 2, 10),
+                H("Layanan", 24),
+                LST(["Desain logo dan identitas merek", "Ilustrasi untuk buku dan kemasan", "Desain media sosial"]),
+            ]},
+            {"name": "Kontak", "elements": [
+                H("Mari berkolaborasi", 34),
+                P("Ceritakan kebutuhanmu dan saya balas dalam dua hari kerja."),
+                INP("Nama", "Nama kamu"),
+                INP("Email", "nama@email.com", "email"),
+                INP("Pesan", "Ceritakan proyekmu"),
+                B("Kirim pesan"),
+                FOOT("© 2026 Rani Maharani"),
+            ]},
+        ],
+    },
+    "cv_online": {
+        "name": "CV online",
+        "category": "Pribadi",
+        "desc": "Riwayat kerja, pendidikan, dan keahlian dalam satu halaman rapi.",
+        "title": "Budi Santoso",
+        "theme": theme_of("#334155", "#ffffff", "#0f172a", "Serif klasik", 700),
+        "pages": [{"name": "CV", "elements": [
+            H("Budi Santoso", 40),
+            P("Analis data. budi@contoh.id"),
+            DIV(),
+            H("Pengalaman", 26),
+            LST([
+                "Analis Data, PT Maju Bersama (2023 sampai sekarang)",
+                "Staf Riset, Lembaga Survei Nusantara (2021 sampai 2023)",
+            ]),
+            H("Pendidikan", 26),
+            LST(["S1 Statistika, Universitas Contoh (2017 sampai 2021)"]),
+            H("Keahlian", 26),
+            LST(["SQL dan Python", "Visualisasi data", "Penulisan laporan"]),
+            B("Unduh CV", "#"),
+        ]}],
+    },
+    "link_bio": {
+        "name": "Link in bio",
+        "category": "Pribadi",
+        "desc": "Halaman sempit berisi foto profil dan deretan tombol tautan.",
+        "title": "Nadia Creates",
+        "theme": theme_of("#7c3aed", "#faf5ff", "#2e1065", width=420),
+        "pages": [{"name": "Tautan", "elements": [
+            SPC(16),
+            IMG("avatar", "Foto profil", 48, 400, 400),
+            H("@nadia.creates", 28, "center"),
+            P("Kreator konten fotografi dan perjalanan.", "center"),
+            B("Instagram", "#", "center"),
+            B("YouTube", "#", "center"),
+            B("Toko preset foto", "#", "center"),
+            B("Kerja sama", "#", "center"),
+            FOOT("Terima kasih sudah mampir"),
+        ]}],
+    },
+    "blog": {
+        "name": "Artikel blog",
+        "category": "Konten",
+        "desc": "Tata letak artikel dengan gambar sampul, poin penting, dan rekomendasi bacaan.",
+        "title": "Catatan Dimas",
+        "theme": theme_of("#1d4ed8", "#ffffff", "#1f2937", "Serif klasik", 680),
+        "pages": [{"name": "Artikel", "elements": [
+            H("Belajar menulis setiap hari", 38),
+            P("Oleh Dimas, 5 menit baca"),
+            IMG("writing", "Meja menulis", 8),
+            P("Menulis bukan soal bakat. Ia kebiasaan kecil yang diulang sampai terasa ringan. Mulailah dari satu paragraf sehari."),
+            H("Poin penting", 26),
+            LST(["Tetapkan waktu menulis yang sama", "Tulis dulu, rapikan belakangan", "Baca ulang dengan suara keras"], "number"),
+            DIV(),
+            CARD("Baca juga", "Tiga kebiasaan kecil yang membuat tulisanmu lebih tajam."),
+            FOOT("© 2026 Catatan Dimas"),
+        ]}],
+    },
+    "kursus": {
+        "name": "Kursus online",
+        "category": "Pendidikan",
+        "desc": "Halaman pendaftaran kelas: materi, pilihan paket, dan tombol daftar.",
+        "title": "Kelas Kode",
+        "theme": theme_of("#0369a1", "#f0f9ff", "#0c4a6e", width=760),
+        "pages": [{"name": "Kelas", "elements": [
+            NAV("Kelas Kode", [("Materi", "#"), ("Paket", "#"), ("Masuk", "#")]),
+            SPC(8),
+            H("Belajar pemrograman dari nol", 40),
+            P("Kelas daring dengan latihan langsung dan mentor yang menjawab pertanyaanmu."),
+            B("Daftar kelas", "#"),
+            IMG("coding", "Belajar pemrograman", 12),
+            H("Yang akan kamu pelajari", 28),
+            LST(["Dasar logika pemrograman", "Membuat halaman web", "Mengolah data sederhana", "Membuat aplikasi kecil", "Proyek akhir"], "number"),
+            H("Pilih paket", 28),
+            CARD("Reguler", "Rp 299.000. Akses materi selama 3 bulan."),
+            CARD("Intensif", "Rp 599.000. Akses 1 tahun dan sesi mentoring mingguan."),
+            FOOT("Garansi uang kembali 7 hari"),
+        ]}],
+    },
+    "undangan": {
+        "name": "Undangan acara",
+        "category": "Acara",
+        "desc": "Undangan digital dengan waktu, tempat, dan konfirmasi kehadiran.",
+        "title": "Ayu dan Bagas",
+        "theme": theme_of("#be185d", "#fdf2f8", "#500724", "Serif klasik", 600),
+        "pages": [{"name": "Undangan", "elements": [
+            SPC(16),
+            H("Ayu dan Bagas", 44, "center"),
+            P("Dengan hormat mengundang Anda untuk hadir di hari bahagia kami.", "center"),
+            IMG("wedding", "Foto pasangan", 24, 600, 400),
+            H("Waktu dan tempat", 26, "center"),
+            P("Sabtu, 12 Desember 2026, pukul 10.00 WIB", "center"),
+            P("Gedung Serbaguna Melati, Jl. Merdeka No. 12", "center"),
+            B("Lihat lokasi", "#", "center"),
+            DIV(),
+            H("Konfirmasi kehadiran", 24, "center"),
+            INP("Nama", "Nama Anda"),
+            INP("Jumlah tamu", "1", "number"),
+            B("Konfirmasi", "", "center"),
+            FOOT("Merupakan kehormatan bagi kami atas kehadiran Anda"),
+        ]}],
+    },
+    "konferensi": {
+        "name": "Jadwal acara dan pembicara",
+        "category": "Acara",
+        "desc": "Halaman meetup atau seminar: jadwal, foto pembicara, dan tombol tiket.",
+        "title": "Dev Meetup 2026",
+        "theme": theme_of("#4338ca", "#eef2ff", "#1e1b4b", width=720),
+        "pages": [{"name": "Acara", "elements": [
+            H("Dev Meetup 2026", 38, "center"),
+            P("Sabtu, 14 November 2026, di Aula Utama. Gratis untuk 200 peserta pertama.", "center"),
+            B("Daftar tiket", "#", "center"),
+            H("Jadwal", 26),
+            LST([
+                "09.00 Registrasi",
+                "09.30 Pembukaan",
+                "10.00 Sesi 1: Membangun aplikasi cepat",
+                "13.00 Sesi 2: Data untuk pemula",
+                "15.30 Diskusi panel",
+            ]),
+            H("Pembicara", 26),
+            GAL(["speaker1", "speaker2", "speaker3", "speaker4"], 4, 48),
+            FOOT("Ditemani kopi dan makan siang"),
+        ]}],
+    },
+    "dashboard": {
+        "name": "Ringkasan statistik",
+        "category": "Data",
+        "desc": "Kartu angka penting, daftar tugas, dan kolom pencarian laporan.",
+        "title": "Ringkasan Mingguan",
+        "theme": theme_of("#0891b2", "#f8fafc", "#0f172a", width=900),
+        "pages": [{"name": "Ringkasan", "elements": [
+            H("Ringkasan minggu ini", 34),
+            CARD("Pengunjung", "12.480, naik 8% dari minggu lalu."),
+            CARD("Pesanan", "342, naik 3% dari minggu lalu."),
+            CARD("Pendapatan", "Rp 48,2 juta."),
+            DIV(),
+            H("Tugas hari ini", 24),
+            LST(["Balas ulasan pelanggan", "Perbarui stok produk", "Kirim laporan ke tim"]),
+            INP("Cari laporan", "Ketik kata kunci"),
+            B("Unduh laporan"),
+        ]}],
+    },
+}
+
+
+def template_design(key):
+    """Buat salinan desain dari template, lengkap dengan id baru."""
+    tpl = copy.deepcopy(TEMPLATES[key])
+    theme = default_design()["theme"]
+    theme.update(tpl["theme"])
+    pages = tpl["pages"]
+    for page in pages:
+        page["id"] = uuid.uuid4().hex[:8]
+        for el in page["elements"]:
+            el["id"] = uuid.uuid4().hex[:8]
+    return {"title": tpl["title"], "theme": theme, "pages": pages}
+
+
+def apply_template():
+    key = st.session_state.get("tpl_choice")
+    if key not in TEMPLATES:
+        return
+    new = template_design(key)
+    mode = st.session_state.get("tpl_mode", "Ganti seluruh desain")
+    if mode == "Ganti seluruh desain":
+        load_design(new)
+    else:
+        pages = st.session_state.design["pages"]
+        start = len(pages)
+        pages.extend(new["pages"])
+        st.session_state.page_idx = start
+        st.session_state.selected_id = None
+    st.session_state.tpl_preview = False
 
 
 # ---------------------------------------------------------------------------
@@ -238,6 +708,10 @@ def parse_links(value):
             label, url = ln, "#"
         result.append((label.strip(), url.strip() or "#"))
     return result
+
+
+def input_kind(el):
+    return el.get("kind") if el.get("kind") in INPUT_KINDS else "text"
 
 
 def align_of(el):
@@ -291,7 +765,7 @@ def render_element(el):
     if t == "input":
         return (
             f'<label class="field"><span>{esc(el.get("label", ""))}</span>'
-            f'<input type="text" placeholder="{esc(el.get("placeholder", ""))}"></label>'
+            f'<input type="{input_kind(el)}" placeholder="{esc(el.get("placeholder", ""))}"></label>'
         )
     if t == "card":
         return (
@@ -514,7 +988,10 @@ def describe_element(el, number):
         gaya = "bernomor" if el.get("style") == "number" else "berpoin"
         detail = f"daftar {gaya} dengan item: " + "; ".join(lines_of(el.get("items")))
     elif t == "input":
-        detail = f'label "{el.get("label", "")}", placeholder "{el.get("placeholder", "")}"'
+        detail = (
+            f'label "{el.get("label", "")}", placeholder "{el.get("placeholder", "")}", '
+            f'jenis isian: {INPUT_KINDS[input_kind(el)].lower()}'
+        )
     elif t == "card":
         detail = f'judul "{el.get("title", "")}", isi "{el.get("text", "")}"'
     elif t == "divider":
@@ -616,6 +1093,11 @@ def edit_properties(el, index):
     elif t == "input":
         el["label"] = st.text_input("Label", el["label"], key=f"{key}_label")
         el["placeholder"] = st.text_input("Placeholder", el["placeholder"], key=f"{key}_ph")
+        kinds = list(INPUT_KINDS)
+        el["kind"] = st.selectbox(
+            "Jenis isian", kinds, kinds.index(input_kind(el)),
+            format_func=lambda k: INPUT_KINDS[k], key=f"{key}_kind",
+        )
     elif t == "card":
         el["title"] = st.text_input("Judul", el["title"], key=f"{key}_title")
         el["text"] = st.text_area("Isi", el["text"], key=f"{key}_text")
@@ -661,9 +1143,8 @@ with col_left:
             label_visibility="collapsed",
         )
         page = current_page()
-        page["name"] = st.text_input(
-            "Nama halaman", page["name"], key=f"pname_{st.session_state.page_idx}"
-        )
+        page.setdefault("id", uuid.uuid4().hex[:8])
+        page["name"] = st.text_input("Nama halaman", page["name"], key=f"pname_{page['id']}")
         b1, b2 = st.columns(2)
         b1.button("➕ Tambah", on_click=add_page, use_container_width=True)
         b2.button("🗑️ Hapus", on_click=delete_page, disabled=len(pages) <= 1, use_container_width=True)
@@ -718,12 +1199,17 @@ with col_center:
     )
 
     if view == "Preview":
-        _, sel_el = selected_element()
-        inner = build_html(
-            design,
-            highlight_id=sel_el["id"] if sel_el else None,
-            active=st.session_state.page_idx,
-        )
+        tpl_key = st.session_state.get("tpl_choice")
+        if st.session_state.get("tpl_preview") and tpl_key in TEMPLATES:
+            st.caption(f"Pratinjau template: {TEMPLATES[tpl_key]['name']} (belum diterapkan ke desainmu)")
+            inner = build_html(template_design(tpl_key))
+        else:
+            _, sel_el = selected_element()
+            inner = build_html(
+                design,
+                highlight_id=sel_el["id"] if sel_el else None,
+                active=st.session_state.page_idx,
+            )
         framed = device_frame(inner, DEVICES[device])
         if hasattr(st, "iframe"):
             st.iframe(framed, height=PANEL_HEIGHT - 50)
@@ -756,7 +1242,7 @@ with col_center:
 # ---------------------------- PANEL KANAN ---------------------------------
 with col_right:
     with st.container(height=PANEL_HEIGHT, border=True):
-        tab_prop, tab_theme, tab_file = st.tabs(["Properti", "Tema", "Berkas"])
+        tab_prop, tab_tpl, tab_theme, tab_file = st.tabs(["Properti", "Template", "Tema", "Berkas"])
 
         with tab_prop:
             idx, sel = selected_element()
@@ -764,6 +1250,25 @@ with col_right:
                 st.info("Pilih elemen di panel kiri (bagian Susunan) untuk mengubah propertinya.")
             else:
                 edit_properties(sel, idx)
+
+        with tab_tpl:
+            cats = ["Semua"] + sorted({t["category"] for t in TEMPLATES.values()})
+            cat = st.selectbox("Kategori", cats, key="tpl_cat")
+            keys = [k for k, t in TEMPLATES.items() if cat == "Semua" or t["category"] == cat]
+            choice = st.selectbox(
+                "Template", keys, format_func=lambda k: TEMPLATES[k]["name"], key="tpl_choice"
+            )
+            tpl = TEMPLATES[choice]
+            n_el = sum(len(p["elements"]) for p in tpl["pages"])
+            st.caption(f"{tpl['desc']} ({len(tpl['pages'])} halaman, {n_el} elemen)")
+            st.checkbox("Pratinjau di panel tengah", key="tpl_preview")
+            st.radio(
+                "Cara menerapkan",
+                ["Ganti seluruh desain", "Tambahkan sebagai halaman baru"],
+                key="tpl_mode",
+            )
+            st.button("✨ Pakai template", on_click=apply_template, use_container_width=True)
+            st.caption("Mode ganti akan menimpa desain yang sedang dikerjakan. Unduh dulu lewat tab Berkas bila perlu.")
 
         with tab_theme:
             design["title"] = st.text_input("Nama aplikasi", design["title"])
