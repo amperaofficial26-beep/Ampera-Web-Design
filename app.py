@@ -1,8 +1,11 @@
 import copy
+import hashlib
 import html
 import json
 import re
+import tempfile
 import uuid
+from pathlib import Path
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -76,6 +79,21 @@ DEVICES = {
 
 PANEL_HEIGHT = 780
 
+ICONS = {
+    "navbar": "🧭",
+    "heading": "🔠",
+    "text": "📝",
+    "button": "🔘",
+    "image": "🖼️",
+    "gallery": "🎞️",
+    "list": "📋",
+    "input": "⌨️",
+    "card": "🗂️",
+    "divider": "➖",
+    "spacer": "↕️",
+    "footer": "🔻",
+}
+
 INPUT_KINDS = {
     "text": "Teks",
     "email": "Email",
@@ -136,11 +154,18 @@ def clear_selection():
     st.session_state.selected_id = None
 
 
-def add_element(el_type):
+def insert_element(el_type, index=None):
     el = {"id": uuid.uuid4().hex[:8], "type": el_type}
     el.update(copy.deepcopy(ELEMENT_DEFAULTS[el_type]))
-    current_page()["elements"].append(el)
+    els = current_page()["elements"]
+    if index is None or not isinstance(index, int):
+        index = len(els)
+    els.insert(min(max(index, 0), len(els)), el)
     st.session_state.selected_id = el["id"]
+
+
+def add_element(el_type):
+    insert_element(el_type)
 
 
 def move_element(index, delta):
@@ -1039,6 +1064,258 @@ def build_prompt(design, target="HTML/CSS/JavaScript satu file"):
 
 
 # ---------------------------------------------------------------------------
+# Komponen seret dan lepas (HTML5 drag-and-drop, tanpa paket tambahan)
+# ---------------------------------------------------------------------------
+DND_HTML = r'''<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<style>
+  :root { --fg: #31333f; --bg2: #f0f2f6; --accent: #ff4b4b; --line: rgba(128,128,128,.35); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: transparent; color: var(--fg);
+    font-family: "Source Sans Pro", system-ui, sans-serif; font-size: 14px; }
+  .title { font-weight: 600; margin: 4px 0 2px; }
+  .hint { opacity: .65; font-size: 12px; margin: 0 0 8px; }
+  #palette { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .chip { border: 1px solid var(--line); background: var(--bg2); border-radius: 8px;
+    padding: 5px 9px; cursor: grab; user-select: none; font-size: 13px; }
+  .chip:hover { border-color: var(--accent); }
+  #list { list-style: none; margin: 0; padding: 6px 6px 14px; min-height: 64px;
+    border: 1px dashed var(--line); border-radius: 8px; }
+  #list:empty::before { content: "Seret komponen ke sini"; display: block;
+    text-align: center; opacity: .6; padding: 14px 0; }
+  #list.ins-empty { border-color: var(--accent); background: var(--bg2); }
+  li { display: flex; align-items: center; gap: 8px; padding: 7px 8px; margin: 0 0 6px;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--bg2);
+    cursor: grab; user-select: none; position: relative; }
+  li.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  li.dragging { opacity: .4; }
+  li.ins-before::before, li.ins-after::after { content: ""; position: absolute; left: 0; right: 0;
+    height: 3px; background: var(--accent); border-radius: 2px; }
+  li.ins-before::before { top: -5px; }
+  li.ins-after::after { bottom: -5px; }
+  .grip { opacity: .5; }
+  .lbl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .del { border: 0; background: transparent; color: inherit; cursor: pointer;
+    opacity: .55; font-size: 14px; padding: 0 4px; }
+  .del:hover { opacity: 1; color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="title">Komponen</div>
+<p class="hint">Seret ke daftar di bawah, atau klik untuk menambah di akhir.</p>
+<div id="palette"></div>
+<div class="title">Susunan</div>
+<p class="hint">Seret baris untuk mengubah urutan. Klik untuk memilih.</p>
+<ul id="list"></ul>
+<script>
+(function () {
+  var items = [], palette = [], selected = null, drag = null;
+  var listEl = document.getElementById("list");
+  var palEl = document.getElementById("palette");
+
+  function post(type, data) {
+    window.parent.postMessage(Object.assign({ isStreamlitMessage: true, type: type }, data), "*");
+  }
+  function send(payload) {
+    payload.id = Date.now() + "-" + Math.random().toString(36).slice(2);
+    post("streamlit:setComponentValue", { value: payload, dataType: "json" });
+  }
+  function fit() {
+    post("streamlit:setFrameHeight", { height: document.documentElement.scrollHeight + 4 });
+  }
+  function clearInd() {
+    listEl.classList.remove("ins-empty");
+    listEl.querySelectorAll("li").forEach(function (li) {
+      li.classList.remove("ins-before", "ins-after");
+    });
+  }
+  function indexAt(y) {
+    var lis = listEl.querySelectorAll("li"), idx = 0;
+    for (var i = 0; i < lis.length; i++) {
+      var r = lis[i].getBoundingClientRect();
+      if (y > r.top + r.height / 2) idx++; else break;
+    }
+    return idx;
+  }
+  function showInd(idx) {
+    clearInd();
+    var lis = listEl.querySelectorAll("li");
+    if (!lis.length) { listEl.classList.add("ins-empty"); return; }
+    if (idx < lis.length) lis[idx].classList.add("ins-before");
+    else lis[lis.length - 1].classList.add("ins-after");
+  }
+
+  function render() {
+    palEl.textContent = "";
+    palette.forEach(function (p) {
+      var c = document.createElement("div");
+      c.className = "chip";
+      c.draggable = true;
+      c.textContent = p.icon + " " + p.label;
+      c.addEventListener("dragstart", function (e) {
+        drag = { kind: "new", type: p.type };
+        e.dataTransfer.setData("text/plain", "new:" + p.type);
+        e.dataTransfer.effectAllowed = "copy";
+      });
+      c.addEventListener("dragend", function () { drag = null; clearInd(); });
+      c.addEventListener("click", function () {
+        send({ action: "insert", type: p.type, index: items.length });
+      });
+      palEl.appendChild(c);
+    });
+
+    listEl.textContent = "";
+    items.forEach(function (it, i) {
+      var li = document.createElement("li");
+      li.draggable = true;
+      li.dataset.id = it.id;
+      if (it.id === selected) li.classList.add("sel");
+      var grip = document.createElement("span");
+      grip.className = "grip";
+      grip.textContent = "\u283F";
+      var lbl = document.createElement("span");
+      lbl.className = "lbl";
+      lbl.textContent = (i + 1) + ". " + it.icon + " " + it.label;
+      var del = document.createElement("button");
+      del.className = "del";
+      del.type = "button";
+      del.title = "Hapus";
+      del.textContent = "\u2715";
+      del.addEventListener("click", function (e) {
+        e.stopPropagation();
+        send({ action: "delete", target: it.id });
+      });
+      li.appendChild(grip); li.appendChild(lbl); li.appendChild(del);
+      li.addEventListener("click", function () { send({ action: "select", target: it.id }); });
+      li.addEventListener("dragstart", function (e) {
+        drag = { kind: "move", id: it.id };
+        li.classList.add("dragging");
+        e.dataTransfer.setData("text/plain", "move:" + it.id);
+        e.dataTransfer.effectAllowed = "move";
+      });
+      li.addEventListener("dragend", function () {
+        drag = null; li.classList.remove("dragging"); clearInd();
+      });
+      listEl.appendChild(li);
+    });
+    fit();
+  }
+
+  listEl.addEventListener("dragover", function (e) {
+    if (!drag) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = drag.kind === "new" ? "copy" : "move";
+    showInd(indexAt(e.clientY));
+  });
+  listEl.addEventListener("dragleave", function (e) {
+    if (!listEl.contains(e.relatedTarget)) clearInd();
+  });
+  listEl.addEventListener("drop", function (e) {
+    e.preventDefault();
+    if (!drag) return;
+    var idx = indexAt(e.clientY);
+    clearInd();
+    if (drag.kind === "new") {
+      send({ action: "insert", type: drag.type, index: idx });
+    } else {
+      var ids = items.map(function (x) { return x.id; });
+      var from = ids.indexOf(drag.id);
+      if (from < 0) { drag = null; return; }
+      var to = idx;
+      if (from < to) to -= 1;
+      if (to === from) { drag = null; return; }
+      ids.splice(from, 1);
+      ids.splice(to, 0, drag.id);
+      var byId = {};
+      items.forEach(function (x) { byId[x.id] = x; });
+      items = ids.map(function (id) { return byId[id]; });
+      selected = drag.id;
+      send({ action: "reorder", order: ids, selected: drag.id });
+      render();
+    }
+    drag = null;
+  });
+
+  function applyTheme(t) {
+    if (!t) return;
+    var r = document.documentElement.style;
+    if (t.textColor) r.setProperty("--fg", t.textColor);
+    if (t.secondaryBackgroundColor) r.setProperty("--bg2", t.secondaryBackgroundColor);
+    if (t.primaryColor) r.setProperty("--accent", t.primaryColor);
+    if (t.font) document.body.style.fontFamily = t.font;
+  }
+
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (!d || d.type !== "streamlit:render") return;
+    var a = d.args || {};
+    items = a.items || [];
+    palette = a.palette || [];
+    selected = a.selected || null;
+    applyTheme(d.theme);
+    render();
+  });
+  window.addEventListener("resize", fit);
+  post("streamlit:componentReady", { apiVersion: 1 });
+})();
+</script>
+</body>
+</html>
+'''
+
+
+@st.cache_resource
+def get_dnd_component():
+    """Daftarkan komponen kustom dari folder sementara yang dibuat saat dijalankan."""
+    digest = hashlib.md5(DND_HTML.encode("utf-8")).hexdigest()[:8]
+    folder = Path(tempfile.gettempdir()) / f"ui_builder_dnd_{digest}"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "index.html").write_text(DND_HTML, encoding="utf-8")
+    return components.declare_component(f"ui_builder_dnd_{digest}", path=str(folder))
+
+
+def handle_dnd_event(event):
+    """Terapkan event dari komponen seret-lepas. Mengembalikan True jika state berubah."""
+    if not isinstance(event, dict):
+        return False
+    event_id = event.get("id")
+    if not event_id or event_id == st.session_state.get("last_dnd_event"):
+        return False
+    st.session_state.last_dnd_event = event_id
+
+    els = current_page()["elements"]
+    by_id = {e["id"]: e for e in els}
+    action = event.get("action")
+
+    if action == "select":
+        target = event.get("target")
+        if target in by_id:
+            st.session_state.selected_id = target
+        return True
+    if action == "reorder":
+        order = event.get("order")
+        if isinstance(order, list) and sorted(order) == sorted(by_id):
+            els[:] = [by_id[i] for i in order]
+            if event.get("selected") in by_id:
+                st.session_state.selected_id = event["selected"]
+        return True
+    if action == "insert":
+        if event.get("type") in ELEMENT_LABELS:
+            insert_element(event["type"], event.get("index"))
+        return True
+    if action == "delete":
+        target = event.get("target")
+        for i, el in enumerate(els):
+            if el["id"] == target:
+                delete_element(i)
+                break
+        return True
+    return False
+
+
+# ---------------------------------------------------------------------------
 # Panel properti (kanan)
 # ---------------------------------------------------------------------------
 def summary_of(el):
@@ -1109,6 +1386,12 @@ def edit_properties(el, index):
         st.caption("Elemen ini tidak punya pengaturan.")
 
     st.divider()
+    total = len(current_page()["elements"])
+    m1, m2 = st.columns(2)
+    m1.button("⬆️ Naikkan", key=f"{key}_mvup", on_click=move_element, args=(index, -1),
+              disabled=index == 0, use_container_width=True)
+    m2.button("⬇️ Turunkan", key=f"{key}_mvdn", on_click=move_element, args=(index, 1),
+              disabled=index >= total - 1, use_container_width=True)
     c1, c2 = st.columns(2)
     c1.button("📄 Gandakan", key=f"{key}_dup", on_click=duplicate_element, args=(index,), use_container_width=True)
     c2.button("🗑️ Hapus", key=f"{key}_del", on_click=delete_element, args=(index,), use_container_width=True)
@@ -1149,36 +1432,65 @@ with col_left:
         b1.button("➕ Tambah", on_click=add_page, use_container_width=True)
         b2.button("🗑️ Hapus", on_click=delete_page, disabled=len(pages) <= 1, use_container_width=True)
 
-        st.markdown("##### ➕ Komponen")
-        grid = st.columns(2)
-        for n, t in enumerate(ELEMENT_LABELS):
-            grid[n % 2].button(
-                ELEMENT_LABELS[t],
-                key=f"add_{t}",
-                on_click=add_element,
-                args=(t,),
-                use_container_width=True,
-            )
-
-        st.markdown("##### 🌳 Susunan")
+        dnd_on = st.checkbox(
+            "🖱️ Mode seret dan lepas",
+            value=True,
+            key="dnd_mode",
+            help="Matikan jika komponen seret-lepas tidak tampil di perangkatmu. Daftar tombol akan dipakai sebagai gantinya.",
+        )
         elements = page["elements"]
-        if not elements:
-            st.caption("Belum ada elemen. Klik salah satu komponen di atas.")
-        for i, el in enumerate(elements):
-            is_sel = el["id"] == st.session_state.selected_id
-            r1, r2, r3 = st.columns([6, 1.4, 1.4], gap="small")
-            r1.button(
-                f"{i + 1}. {ELEMENT_LABELS[el['type']]}{summary_of(el)}",
-                key=f"sel_{el['id']}",
-                on_click=select_element,
-                args=(el["id"],),
-                type="primary" if is_sel else "secondary",
-                use_container_width=True,
+
+        if dnd_on:
+            dnd = get_dnd_component()
+            event = dnd(
+                items=[
+                    {
+                        "id": el["id"],
+                        "label": ELEMENT_LABELS[el["type"]] + summary_of(el),
+                        "icon": ICONS.get(el["type"], "▫️"),
+                    }
+                    for el in elements
+                ],
+                palette=[
+                    {"type": t, "label": label, "icon": ICONS.get(t, "▫️")}
+                    for t, label in ELEMENT_LABELS.items()
+                ],
+                selected=st.session_state.selected_id,
+                key="dnd_list",
+                default=None,
             )
-            r2.button("↑", key=f"up_{el['id']}", on_click=move_element, args=(i, -1),
-                      disabled=i == 0, help="Naikkan", use_container_width=True)
-            r3.button("↓", key=f"dn_{el['id']}", on_click=move_element, args=(i, 1),
-                      disabled=i == len(elements) - 1, help="Turunkan", use_container_width=True)
+            if handle_dnd_event(event):
+                st.rerun()
+        else:
+            st.markdown("##### ➕ Komponen")
+            grid = st.columns(2)
+            for n, t in enumerate(ELEMENT_LABELS):
+                grid[n % 2].button(
+                    ELEMENT_LABELS[t],
+                    key=f"add_{t}",
+                    on_click=add_element,
+                    args=(t,),
+                    use_container_width=True,
+                )
+
+            st.markdown("##### 🌳 Susunan")
+            if not elements:
+                st.caption("Belum ada elemen. Klik salah satu komponen di atas.")
+            for i, el in enumerate(elements):
+                is_sel = el["id"] == st.session_state.selected_id
+                r1, r2, r3 = st.columns([6, 1.4, 1.4], gap="small")
+                r1.button(
+                    f"{i + 1}. {ELEMENT_LABELS[el['type']]}{summary_of(el)}",
+                    key=f"sel_{el['id']}",
+                    on_click=select_element,
+                    args=(el["id"],),
+                    type="primary" if is_sel else "secondary",
+                    use_container_width=True,
+                )
+                r2.button("↑", key=f"up_{el['id']}", on_click=move_element, args=(i, -1),
+                          disabled=i == 0, help="Naikkan", use_container_width=True)
+                r3.button("↓", key=f"dn_{el['id']}", on_click=move_element, args=(i, 1),
+                          disabled=i == len(elements) - 1, help="Turunkan", use_container_width=True)
 
 # ---------------------------- PANEL TENGAH --------------------------------
 with col_center:
@@ -1247,7 +1559,7 @@ with col_right:
         with tab_prop:
             idx, sel = selected_element()
             if sel is None:
-                st.info("Pilih elemen di panel kiri (bagian Susunan) untuk mengubah propertinya.")
+                st.info("Klik salah satu baris di daftar Susunan (panel kiri) untuk mengubah propertinya.")
             else:
                 edit_properties(sel, idx)
 
