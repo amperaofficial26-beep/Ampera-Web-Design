@@ -1758,6 +1758,18 @@ with col_left:
 
         if dnd_on:
             dnd = get_dnd_component()
+            # Gunakan key yang berubah ketika daftar/urutan elemen berubah.
+            # Ini memaksa custom component D&D melakukan remount sehingga state
+            # browser tidak menyimpan daftar elemen lama setelah insert/delete/reorder.
+            dnd_signature = hashlib.md5(
+                "|".join(
+                    [
+                        str(page.get("id", "")),
+                        *[f"{el.get('id','')}:{el.get('type','')}" for el in elements],
+                    ]
+                ).encode("utf-8")
+            ).hexdigest()[:10]
+
             event = dnd(
                 items=[
                     {
@@ -1772,7 +1784,7 @@ with col_left:
                     for t, label in ELEMENT_LABELS.items()
                 ],
                 selected=st.session_state.selected_id,
-                key="dnd_list",
+                key=f"dnd_list_{dnd_signature}",
                 default=None,
             )
             if handle_dnd_event(event):
