@@ -5,7 +5,7 @@ import html
 import json
 import re
 import tempfile
-import uuidimport copy
+import uuid import copy
 import hashlib
 from datetime import datetime
 import html
