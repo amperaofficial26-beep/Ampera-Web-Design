@@ -133,10 +133,20 @@ WIDTH_OPTIONS = {
 
 
 def ensure_element_style(el):
-    style = el.setdefault("style", {})
+    # Visual styling uses a separate key so semantic element properties
+    # such as the list's `style` (bullet/number) are never overwritten.
+    legacy = el.get("style")
+    if isinstance(legacy, dict):
+        visual = el.setdefault("visual_style", {})
+        for k, v in legacy.items():
+            visual.setdefault(k, copy.deepcopy(v))
+        el.pop("style", None)
+    elif "visual_style" not in el:
+        el["visual_style"] = {}
+    visual = el["visual_style"]
     for k, v in ELEMENT_STYLE_DEFAULTS.items():
-        style.setdefault(k, copy.deepcopy(v))
-    return style
+        visual.setdefault(k, copy.deepcopy(v))
+    return visual
 
 
 def element_style_attr(el, extra=""):
@@ -362,7 +372,7 @@ def clear_selection():
 def insert_element(el_type, index=None):
     el = {"id": uuid.uuid4().hex[:8], "type": el_type}
     el.update(copy.deepcopy(ELEMENT_DEFAULTS[el_type]))
-    el["style"] = copy.deepcopy(ELEMENT_STYLE_DEFAULTS)
+    el["visual_style"] = copy.deepcopy(ELEMENT_STYLE_DEFAULTS)
     els = current_page()["elements"]
     if index is None or not isinstance(index, int):
         index = len(els)
@@ -451,7 +461,7 @@ def valid_design(data):
 def mk(el_type, **props):
     el = {"type": el_type}
     el.update(copy.deepcopy(ELEMENT_DEFAULTS[el_type]))
-    el["style"] = copy.deepcopy(ELEMENT_STYLE_DEFAULTS)
+    el["visual_style"] = copy.deepcopy(ELEMENT_STYLE_DEFAULTS)
     el.update(props)
     ensure_element_style(el)
     return el
