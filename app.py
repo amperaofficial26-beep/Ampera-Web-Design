@@ -104,6 +104,58 @@ INPUT_KINDS = {
     "tel": "Telepon",
 }
 
+# Gaya visual umum yang bisa diedit pada setiap elemen.
+ELEMENT_STYLE_DEFAULTS = {
+    "background": "transparent",
+    "color": "inherit",
+    "border_color": "#d1d5db",
+    "border_width": 0,
+    "radius": 8,
+    "shadow": "none",
+    "padding": 0,
+    "width": "auto",
+}
+
+SHADOW_OPTIONS = {
+    "Tanpa bayangan": "none",
+    "Halus": "0 2px 8px rgba(0,0,0,.08)",
+    "Sedang": "0 6px 18px rgba(0,0,0,.12)",
+    "Kuat": "0 12px 30px rgba(0,0,0,.18)",
+}
+
+WIDTH_OPTIONS = {
+    "Auto": "auto",
+    "100%": "100%",
+    "90%": "90%",
+    "75%": "75%",
+    "50%": "50%",
+}
+
+
+def ensure_element_style(el):
+    style = el.setdefault("style", {})
+    for k, v in ELEMENT_STYLE_DEFAULTS.items():
+        style.setdefault(k, copy.deepcopy(v))
+    return style
+
+
+def element_style_attr(el, extra=""):
+    style = ensure_element_style(el)
+    bg = style.get("background", "transparent")
+    color = style.get("color", "inherit")
+    border_color = style.get("border_color", "#d1d5db")
+    border_width = max(0, min(8, int(style.get("border_width", 0) or 0)))
+    radius = max(0, min(80, int(style.get("radius", 8) or 0)))
+    padding = max(0, min(80, int(style.get("padding", 0) or 0)))
+    shadow = style.get("shadow", "none")
+    width = style.get("width", "auto")
+    return (
+        f'background:{esc(bg)};color:{esc(color)};'
+        f'border:{border_width}px solid {esc(border_color)};'
+        f'border-radius:{radius}px;box-shadow:{esc(shadow)};'
+        f'padding:{padding}px;width:{esc(width)};' + extra
+    )
+
 
 # ---------------------------------------------------------------------------
 # State
@@ -310,6 +362,7 @@ def clear_selection():
 def insert_element(el_type, index=None):
     el = {"id": uuid.uuid4().hex[:8], "type": el_type}
     el.update(copy.deepcopy(ELEMENT_DEFAULTS[el_type]))
+    el["style"] = copy.deepcopy(ELEMENT_STYLE_DEFAULTS)
     els = current_page()["elements"]
     if index is None or not isinstance(index, int):
         index = len(els)
@@ -384,6 +437,7 @@ def valid_design(data):
                 el.setdefault("id", uuid.uuid4().hex[:8])
                 for k, v in ELEMENT_DEFAULTS[el["type"]].items():
                     el.setdefault(k, copy.deepcopy(v))
+                ensure_element_style(el)
         for k, v in default_design()["theme"].items():
             data["theme"].setdefault(k, v)
         return True
@@ -397,7 +451,9 @@ def valid_design(data):
 def mk(el_type, **props):
     el = {"type": el_type}
     el.update(copy.deepcopy(ELEMENT_DEFAULTS[el_type]))
+    el["style"] = copy.deepcopy(ELEMENT_STYLE_DEFAULTS)
     el.update(props)
+    ensure_element_style(el)
     return el
 
 
@@ -898,64 +954,75 @@ def align_of(el):
 
 def render_element(el):
     t = el["type"]
+    common = element_style_attr(el)
     if t == "navbar":
         links = "".join(
             f'<a href="{esc(safe_url(url))}">{esc(label)}</a>'
             for label, url in parse_links(el.get("links"))
         )
         return (
-            f'<header class="topbar"><strong>{esc(el.get("brand", ""))}</strong>'
+            f'<header class="topbar" style="{common}"><strong>{esc(el.get("brand", ""))}</strong>'
             f"<nav>{links}</nav></header>"
         )
     if t == "heading":
         return (
-            f'<h1 style="font-size:{num(el.get("size"), 36)}px;'
-            f'text-align:{align_of(el)}">{esc(el.get("text", ""))}</h1>'
+            f'<h1 style="{element_style_attr(el, f"font-size:{num(el.get("size"), 36)}px;text-align:{align_of(el)};")}">'
+            f'{esc(el.get("text", ""))}</h1>'
         )
     if t == "text":
-        return f'<p style="text-align:{align_of(el)}">{esc(el.get("text", ""))}</p>'
+        return f'<p style="{element_style_attr(el, f"text-align:{align_of(el)};")}">{esc(el.get("text", ""))}</p>'
     if t == "button":
         label = esc(el.get("text", ""))
         link = (el.get("link") or "").strip()
+        button_style = element_style_attr(el, "display:inline-block;font:inherit;text-decoration:none;cursor:pointer;")
         inner = (
-            f'<a class="btn" href="{esc(safe_url(link))}">{label}</a>'
+            f'<a class="btn" style="{button_style}" href="{esc(safe_url(link))}">{label}</a>'
             if link
-            else f'<button class="btn" type="button">{label}</button>'
+            else f'<button class="btn" style="{button_style}" type="button">{label}</button>'
         )
         return f'<div style="text-align:{align_of(el)}">{inner}</div>'
     if t == "image":
-        return (
-            f'<img src="{esc(safe_url(el.get("url", "")))}" alt="{esc(el.get("alt", ""))}" '
-            f'style="border-radius:{num(el.get("radius"), 0)}px">'
-        )
+        style = element_style_attr(el, "display:block;max-width:100%;height:auto;")
+        return f'<img src="{esc(safe_url(el.get("url", "")))}" alt="{esc(el.get("alt", ""))}" style="{style}">'
     if t == "gallery":
         cols = min(max(num(el.get("columns"), 3), 1), 4)
+        gallery_style = element_style_attr(el, f"display:grid;gap:10px;grid-template-columns:repeat({cols},1fr);")
         imgs = "".join(
-            f'<img src="{esc(safe_url(u))}" alt="Gambar galeri {n}" '
-            f'style="border-radius:{num(el.get("radius"), 0)}px">'
+            f'<img src="{esc(safe_url(u))}" alt="Gambar galeri {n}" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:{max(0, int(ensure_element_style(el).get("radius", 8) or 0))}px">'
             for n, u in enumerate(lines_of(el.get("urls")), start=1)
         )
-        return f'<div class="gallery" style="grid-template-columns:repeat({cols},1fr)">{imgs}</div>'
+        return f'<div class="gallery" style="{gallery_style}">{imgs}</div>'
     if t == "list":
         tag = "ol" if el.get("style") == "number" else "ul"
         items = "".join(f"<li>{esc(i)}</li>" for i in lines_of(el.get("items")))
-        return f"<{tag}>{items}</{tag}>"
+        return f'<{tag} style="{element_style_attr(el)}">{items}</{tag}>'
     if t == "input":
+        style = ensure_element_style(el)
+        input_style = (
+            f'width:100%;padding:10px 12px;font:inherit;'
+            f'background:{esc(style.get("background", "transparent"))};color:{esc(style.get("color", "inherit"))};'
+            f'border:{max(1, int(style.get("border_width", 0) or 0))}px solid {esc(style.get("border_color", "#d1d5db"))};'
+            f'border-radius:{max(0, int(style.get("radius", 8) or 0))}px;box-shadow:{esc(style.get("shadow", "none"))};'
+        )
+        label_style = f'color:{esc(style.get("color", "inherit"))};'
         return (
-            f'<label class="field"><span>{esc(el.get("label", ""))}</span>'
-            f'<input type="{input_kind(el)}" placeholder="{esc(el.get("placeholder", ""))}"></label>'
+            f'<label class="field" style="width:{esc(style.get("width", "auto"))};padding:{max(0, int(style.get("padding", 0) or 0))}px;">'
+            f'<span style="{label_style}">{esc(el.get("label", ""))}</span>'
+            f'<input type="{input_kind(el)}" placeholder="{esc(el.get("placeholder", ""))}" style="{input_style}"></label>'
         )
     if t == "card":
         return (
-            f'<div class="card"><h3>{esc(el.get("title", ""))}</h3>'
+            f'<div class="card" style="{common}"><h3>{esc(el.get("title", ""))}</h3>'
             f'<p>{esc(el.get("text", ""))}</p></div>'
         )
     if t == "divider":
-        return "<hr>"
+        style = ensure_element_style(el)
+        bw = max(1, int(style.get("border_width", 1) or 1))
+        return f'<hr style="border:0;border-top:{bw}px solid {esc(style.get("border_color", "#d1d5db"))};margin:0 0 16px;box-shadow:{esc(style.get("shadow", "none"))};width:{esc(style.get("width", "100%"))}">'
     if t == "spacer":
-        return f'<div style="height:{num(el.get("height"), 24)}px"></div>'
+        return f'<div style="height:{num(el.get("height"), 24)}px;background:{esc(ensure_element_style(el).get("background", "transparent"))};border-radius:{max(0, int(ensure_element_style(el).get("radius", 8) or 0))}px;"></div>'
     if t == "footer":
-        return f'<footer class="footer">{esc(el.get("text", ""))}</footer>'
+        return f'<footer class="footer" style="{common}">{esc(el.get("text", ""))}</footer>'
     return ""
 
 
@@ -1484,6 +1551,52 @@ def align_radio(el, key):
     return st.radio("Rata", ALIGNS, ALIGNS.index(align_of(el)), horizontal=True, key=key)
 
 
+def edit_visual_properties(el, key):
+    """Panel gaya umum untuk setiap elemen."""
+    style = ensure_element_style(el)
+    with st.expander("🎨 Tampilan & Bentuk", expanded=False):
+        c1, c2 = st.columns(2)
+        style["background"] = c1.color_picker(
+            "Warna latar", style.get("background", "#ffffff") if style.get("background") != "transparent" else "#ffffff",
+            key=f"{key}_bg_color",
+        )
+        transparent = c2.checkbox("Transparan", style.get("background") == "transparent", key=f"{key}_bg_transparent")
+        if transparent:
+            style["background"] = "transparent"
+
+        c1, c2 = st.columns(2)
+        style["color"] = c1.color_picker(
+            "Warna teks", style.get("color", "#1f2937") if style.get("color") != "inherit" else "#1f2937",
+            key=f"{key}_text_color",
+        )
+        style["border_color"] = c2.color_picker(
+            "Warna garis", style.get("border_color", "#d1d5db"), key=f"{key}_border_color"
+        )
+
+        c1, c2 = st.columns(2)
+        style["border_width"] = c1.slider(
+            "Ketebalan garis", 0, 6, int(style.get("border_width", 0)), key=f"{key}_border_width"
+        )
+        style["radius"] = c2.slider(
+            "Bentuk / radius", 0, 48, int(style.get("radius", 8)), key=f"{key}_radius_style"
+        )
+
+        c1, c2 = st.columns(2)
+        shadow_label = next((label for label, value in SHADOW_OPTIONS.items() if value == style.get("shadow")), "Tanpa bayangan")
+        selected_shadow = c1.selectbox(
+            "Bayangan", list(SHADOW_OPTIONS), index=list(SHADOW_OPTIONS).index(shadow_label), key=f"{key}_shadow"
+        )
+        style["shadow"] = SHADOW_OPTIONS[selected_shadow]
+        style["padding"] = c2.slider(
+            "Padding", 0, 48, int(style.get("padding", 0)), key=f"{key}_padding"
+        )
+
+        width_label = next((label for label, value in WIDTH_OPTIONS.items() if value == style.get("width")), "Auto")
+        style["width"] = WIDTH_OPTIONS[c1.selectbox(
+            "Lebar elemen", list(WIDTH_OPTIONS), index=list(WIDTH_OPTIONS).index(width_label), key=f"{key}_width"
+        )]
+
+
 def edit_properties(el, index):
     key = el["id"]
     t = el["type"]
@@ -1538,6 +1651,7 @@ def edit_properties(el, index):
     else:
         st.caption("Elemen ini tidak punya pengaturan.")
 
+    edit_visual_properties(el, key)
     st.divider()
     total = len(current_page()["elements"])
     m1, m2 = st.columns(2)
