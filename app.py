@@ -1,4 +1,4 @@
-"""UI Builder: titik masuk aplikasi Streamlit (hanya tata letak halaman).
+"""AOG Web Desain (Visual Website Builder): titik masuk aplikasi Streamlit (hanya tata letak halaman).
 
 Jalankan dengan:  streamlit run app.py
 Logika dipisah ke modul lain; lihat README.md untuk peta modul.
@@ -6,12 +6,13 @@ Logika dipisah ke modul lain; lihat README.md untuk peta modul.
 import hashlib
 import json
 import uuid
+from collections import Counter
 
 import streamlit as st
 
 # set_page_config harus jadi perintah Streamlit pertama.
 st.set_page_config(
-    page_title="UI Builder",
+    page_title="AOG Web Desain",
     page_icon=":material/widgets:",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -26,7 +27,7 @@ from bar_specs_addons import COMPONENT_BAR_SPECS  # noqa: E402
 from config import (  # noqa: E402
     DEVICES, ELEMENT_GROUP, ELEMENT_LABELS, FONTS, ICONS, PANEL_HEIGHT,
 )
-from css import APP_CSS  # noqa: E402
+from css_aog import AOG_CSS  # noqa: E402
 from design import valid_design  # noqa: E402
 from design_refs import DESIGN_REFS, ref_preview_html, swatches_html  # noqa: E402
 from dnd_components import get_dnd_component, get_preview_component, handle_dnd_event, handle_preview_event  # noqa: E402
@@ -39,23 +40,32 @@ from prompt_builder import build_prompt  # noqa: E402
 from properties import edit_properties, summary_of  # noqa: E402
 from templates import TEMPLATES, template_design  # noqa: E402
 
+ALL_GROUPS = "Semua grup"
+VIEW_LABELS = {
+    "Preview": ":material/visibility: Preview",
+    "Kode HTML": ":material/code: Code",
+    "Prompt Master AI": ":material/auto_awesome: AI Builder",
+}
+
+
+def _show_group(group):
+    """Callback: tampilkan satu grup di Component Library."""
+    st.session_state.dock_group = group
+
+
+def _open_ai_builder():
+    """Callback: pindah ke tampilan AI Builder (Prompt Master AI)."""
+    st.session_state.view_mode = "Prompt Master AI"
+
+
 init_state()
 design = st.session_state.design
 
-st.markdown(f"<style>{APP_CSS}</style>", unsafe_allow_html=True)
+st.markdown(f"<style>{AOG_CSS}</style>", unsafe_allow_html=True)
 
 autosave_project()
 
-# ---------------------------- HEADER & PROYEK ------------------------------
-with st.container(key="hero"):
-    hc1, hc2 = st.columns([3, 1.4], vertical_alignment="center")
-    hc1.markdown("## :material/dashboard_customize: UI Builder")
-    hc1.caption("Susun tampilan aplikasi, lihat hasilnya langsung, lalu ambil kode HTML atau prompt master AI.")
-    hc2.markdown(
-        f":material/widgets: {len(ELEMENT_LABELS)} komponen &nbsp;·&nbsp; "
-        f":material/dashboard: {len(TEMPLATES)} template &nbsp;·&nbsp; :material/palette: {len(DESIGN_REFS)} gaya"
-    )
-
+# ------------------------------ DATA PROYEK --------------------------------
 project_list = list_projects()
 project_ids = [p["id"] for p in project_list]
 project_names = {p["id"]: p["name"] for p in project_list}
@@ -65,52 +75,24 @@ if st.session_state.get("project_id") not in project_ids:
 if st.session_state.get("project_selector_topbar") not in project_ids:
     st.session_state.project_selector_topbar = st.session_state.project_id
 
-with st.container(border=True, key="projbar"):
-    p1, p2, p3, p4 = st.columns([3.1, 1.15, 1.15, 1.15])
-    p1.selectbox(
-        "Proyek",
-        project_ids,
-        format_func=lambda pid: project_names.get(pid, pid),
-        key="project_selector_topbar",
-        on_change=switch_project,
-        label_visibility="collapsed",
-    )
-    p2.button("Baru", icon=":material/add:", key="new_project_btn", on_click=new_project, use_container_width=True)
-    p3.button("Nama", icon=":material/edit:", key="rename_project_btn", on_click=rename_project, use_container_width=True)
-    p4.button(
-        "Hapus", icon=":material/delete:", key="delete_project_btn", on_click=delete_project,
-        disabled=len(project_ids) <= 1, use_container_width=True,
-    )
-    r1, r2 = st.columns([3.1, 4.45])
-    r1.text_input(
-        "Nama proyek", value=st.session_state.project_name, key="project_rename",
-        label_visibility="collapsed", placeholder="Nama proyek",
-    )
-    status = {
-        "saved": ":material/cloud_done: Tersimpan otomatis",
-        "saving": ":material/sync: Menyimpan...",
-        "error": ":material/error: Gagal menyimpan",
-    }.get(st.session_state.get("autosave_status"), ":material/cloud_done: Tersimpan otomatis")
-    saved_at = st.session_state.get("last_saved_at")
-    r2.caption(f"{status}" + (f" · {saved_at}" if saved_at else ""))
+pages = design["pages"]
+page = current_page()
+page.setdefault("id", uuid.uuid4().hex[:8])
+page_label = str(st.session_state.get(f"pname_{page['id']}", page["name"]) or "Tanpa nama")
 
-with st.expander(":material/lightbulb: Cara pakai singkat", expanded=False):
-    g1, g2, g3, g4 = st.columns(4)
-    g1.markdown(":material/add_circle: **1. Tambah komponen**\n\nSeret dari daftar Komponen ke Susunan, atau klik untuk menambah di akhir.")
-    g2.markdown(":material/tune: **2. Atur properti**\n\nKlik satu baris di Susunan, lalu ubah teks, ikon, dan gaya di tab Properti.")
-    g3.markdown(":material/dashboard: **3. Mulai dari template**\n\nTab Template berisi galeri siap pakai dan referensi gaya desain.")
-    g4.markdown(":material/code: **4. Ambil hasilnya**\n\nPilih Kode HTML atau Prompt AI di atas preview, lalu unduh.")
+# ----------------------------- HEADER / TOOLBAR ----------------------------
+# HEADER = CONTROL: halaman, mode tampilan, status simpan, proyek.
+with st.container(key="aog_header"):
+    hc_brand, hc_page, hc_view, hc_status, hc_proj = st.columns([1.5, 1.5, 3, 1.6, 1.1], vertical_alignment="center")
 
-# Sisakan ruang ekstra untuk panel halaman dan editor, tanpa mengorbankan area preview.
-col_left, col_center, col_right = st.columns([1.1, 3.5, 1.75], gap="medium")
+    hc_brand.markdown(
+        '<div class="aog-brand"><span class="aog-name">AOG Web Desain</span>'
+        '<span class="aog-sub">Visual Website Builder</span></div>',
+        unsafe_allow_html=True,
+    )
 
-# ---------------------------- PANEL KIRI ----------------------------------
-# Panel kiri menjadi ruang ringkas untuk navigasi halaman dan status pilihan.
-with col_left:
-    with st.container(height=PANEL_HEIGHT, border=True, key="panel_left"):
-        st.markdown("#### :material/web_asset: Halaman")
-        st.caption("Kelola halaman dan lihat isi yang sedang dikerjakan.")
-        pages = design["pages"]
+    with hc_page.popover(page_label, icon=":material/description:", use_container_width=True):
+        st.caption("HALAMAN")
         st.selectbox(
             "Halaman aktif",
             options=list(range(len(pages))),
@@ -122,7 +104,7 @@ with col_left:
         page.setdefault("id", uuid.uuid4().hex[:8])
         page["name"] = st.text_input("Nama halaman", page["name"], key=f"pname_{page['id']}")
         b1, b2 = st.columns(2, gap="small")
-        b1.button("Tambah", icon=":material/add:", on_click=add_page, use_container_width=True,
+        b1.button("Tambah halaman", icon=":material/add:", on_click=add_page, use_container_width=True,
                   help="Buat halaman baru dan langsung buka halaman tersebut.")
         b2.button(
             "Hapus", icon=":material/delete:", on_click=delete_page,
@@ -130,38 +112,7 @@ with col_left:
             help="Hapus halaman aktif. Minimal satu halaman harus tersisa.",
         )
 
-        st.divider()
-        st.markdown("##### :material/insights: Ringkasan")
-        metric_col1, metric_col2 = st.columns(2, gap="small")
-        metric_col1.metric("Komponen", len(page["elements"]))
-        active_page_number = min(st.session_state.page_idx, len(pages) - 1) + 1
-        metric_col2.metric("Halaman", f"{active_page_number}/{len(pages)}")
-
-        _, selected = selected_element()
-        with st.container(border=True):
-            if selected:
-                st.markdown(f"**:material/touch_app: {ELEMENT_LABELS[selected['type']]} dipilih**")
-                st.caption("Detail dapat diubah dari tab **Editor → Properti** di panel kanan.")
-            else:
-                st.markdown("**Belum ada komponen dipilih**")
-                st.caption("Pilih komponen pada preview atau daftar Susunan di panel kanan.")
-
-        with st.expander(":material/lightbulb: Panduan singkat", expanded=False):
-            st.markdown(
-                "1. Tambahkan komponen dari katalog bawah.\n"
-                "2. Atur urutan pada **Susunan** di panel kanan.\n"
-                "3. Pilih elemen, lalu sesuaikan teks dan tampilannya di **Properti**."
-            )
-
-# ---------------------------- PANEL TENGAH --------------------------------
-with col_center:
-    top1, top2 = st.columns([2.2, 1])
-    VIEW_LABELS = {
-        "Preview": ":material/visibility: Preview",
-        "Kode HTML": ":material/code: Kode HTML",
-        "Prompt Master AI": ":material/auto_awesome: Prompt AI",
-    }
-    view = top1.radio(
+    view = hc_view.radio(
         "Tampilan",
         list(VIEW_LABELS),
         format_func=lambda v: VIEW_LABELS[v],
@@ -169,16 +120,134 @@ with col_center:
         label_visibility="collapsed",
         key="view_mode",
     )
-    device = top2.selectbox(
-        "Ukuran layar",
-        list(DEVICES),
-        index=0,
-        label_visibility="collapsed",
-        disabled=view != "Preview",
-    )
-    center_output = st.empty()
+
+    status = {
+        "saved": ":material/cloud_done: Tersimpan",
+        "saving": ":material/sync: Menyimpan...",
+        "error": ":material/error: Gagal menyimpan",
+    }.get(st.session_state.get("autosave_status"), ":material/cloud_done: Tersimpan")
+    saved_at = st.session_state.get("last_saved_at")
+    hc_status.caption(status + (f" · {saved_at}" if saved_at else ""))
+
+    with hc_proj.popover("Proyek", icon=":material/folder_open:", use_container_width=True):
+        st.caption("PROYEK")
+        st.selectbox(
+            "Proyek",
+            project_ids,
+            format_func=lambda pid: project_names.get(pid, pid),
+            key="project_selector_topbar",
+            on_change=switch_project,
+        )
+        st.text_input(
+            "Nama proyek", value=st.session_state.project_name, key="project_rename",
+            placeholder="Nama proyek",
+        )
+        p1, p2, p3 = st.columns(3, gap="small")
+        p1.button("Baru", icon=":material/add:", key="new_project_btn", on_click=new_project, use_container_width=True)
+        p2.button("Nama", icon=":material/edit:", key="rename_project_btn", on_click=rename_project, use_container_width=True)
+        p3.button(
+            "Hapus", icon=":material/delete:", key="delete_project_btn", on_click=delete_project,
+            disabled=len(project_ids) <= 1, use_container_width=True,
+        )
+        st.divider()
+        st.caption("CARA PAKAI SINGKAT")
+        st.markdown(
+            ":material/widgets: **Kiri**: pilih elemen\n\n"
+            ":material/visibility: **Tengah**: lihat hasil website\n\n"
+            ":material/tune: **Kanan**: edit properti elemen\n\n"
+            ":material/inventory_2: **Bawah**: cari di Component Library"
+        )
+
+# ------------------------------ AREA EDITOR --------------------------------
+# LEFT = CHOOSE, CENTER = SEE, RIGHT = EDIT.
+col_left, col_center, col_right = st.columns([1.0, 4.0, 1.6], gap="small")
+
+group_counts = Counter(ELEMENT_GROUP.values())
+
+# ---------------------------- PANEL KIRI: ELEMENTS --------------------------
+with col_left:
+    with st.container(height=PANEL_HEIGHT, border=True, key="panel_left"):
+        st.markdown("#### :material/widgets: Elements")
+        el_q = str(st.text_input(
+            "Cari elemen", key="el_q", placeholder="Cari elemen...", label_visibility="collapsed",
+        )).strip().lower()
+
+        if el_q:
+            hits = [
+                t for t in sorted(ELEMENT_LABELS, key=lambda x: ELEMENT_LABELS[x])
+                if el_q in ELEMENT_LABELS[t].lower() or el_q in t.lower() or el_q in ELEMENT_GROUP[t].lower()
+            ]
+            st.caption(f"{len(hits)} hasil")
+            if not hits:
+                st.info("Tidak ada elemen yang cocok.", icon=":material/search_off:")
+            for t in hits[:15]:
+                st.button(
+                    ELEMENT_LABELS[t], icon=f":material/{ICONS.get(t, 'widgets')}:", key=f"left_el_{t}",
+                    on_click=add_element, args=(t,), use_container_width=True,
+                    help=f"Tambah {ELEMENT_LABELS[t]} ({ELEMENT_GROUP[t]})",
+                )
+            if len(hits) > 15:
+                st.caption("Hasil lainnya ada di Component Library di bawah.")
+        else:
+            st.caption("ELEMEN DASAR")
+            basics = [t for t in ELEMENT_LABELS if ELEMENT_GROUP[t] == "Dasar"]
+            for i in range(0, len(basics), 2):
+                bc = st.columns(2, gap="small")
+                for c, t in zip(bc, basics[i:i + 2]):
+                    c.button(
+                        ELEMENT_LABELS[t], icon=f":material/{ICONS.get(t, 'widgets')}:", key=f"left_el_{t}",
+                        on_click=add_element, args=(t,), use_container_width=True,
+                        help=f"Tambah {ELEMENT_LABELS[t]} ke halaman",
+                    )
+            st.caption("KATEGORI")
+            for g in GROUP_ORDER:
+                st.button(
+                    f"{g} ({group_counts.get(g, 0)})", icon=":material/chevron_right:", key=f"left_grp_{g}",
+                    on_click=_show_group, args=(g,), use_container_width=True,
+                    help=f"Tampilkan grup {g} di Component Library",
+                )
+
+        st.divider()
+        _, selected = selected_element()
+        if selected:
+            st.caption(f":material/touch_app: {ELEMENT_LABELS[selected['type']]} dipilih")
+        st.caption(
+            f"{len(current_page()['elements'])} komponen di halaman ini · {len(ELEMENT_LABELS)} komponen tersedia · "
+            f"{len(TEMPLATES)} template · {len(DESIGN_REFS)} gaya"
+        )
+
+# ----------------------------- PANEL TENGAH: CANVAS -------------------------
+with col_center:
+    devices = list(reversed(list(DEVICES)))  # Desktop, Tablet, Ponsel
+    DEVICE_VIEW = {}
+    for dname in devices:
+        w = DEVICES[dname]
+        if w is None:
+            DEVICE_VIEW[dname] = ":material/desktop_windows: Desktop"
+        elif w >= 600:
+            DEVICE_VIEW[dname] = ":material/tablet: Tablet"
+        else:
+            DEVICE_VIEW[dname] = ":material/smartphone: Mobile"
+
+    cb1, cb2 = st.columns([1, 2], vertical_alignment="center")
+    cb1.caption(f"Canvas · {page_label}")
+    with cb2:
+        device = st.radio(
+            "Ukuran layar",
+            devices,
+            format_func=lambda d: DEVICE_VIEW[d],
+            horizontal=True,
+            label_visibility="collapsed",
+            key="device_mode",
+            disabled=view != "Preview",
+        )
+
     target = None
     if view == "Prompt Master AI":
+        st.caption(
+            "AI Builder menyusun Prompt Master dari desain Anda. Salin atau unduh, lalu tempel ke AI favorit Anda "
+            "untuk menghasilkan kodenya."
+        )
         target = st.selectbox(
             "Target pembuatan",
             [
@@ -189,15 +258,15 @@ with col_center:
             ],
             key="prompt_target",
         )
+    with st.container(key="canvas_area"):
+        center_output = st.empty()
 
-# ---------------------------- PANEL KANAN ---------------------------------
-# Panel kanan: Susunan + Properti, Template, Tema, Berkas.
+# ---------------------------- PANEL KANAN: PROPERTIES -----------------------
 with col_right:
     with st.container(height=PANEL_HEIGHT, border=True, key="panel_right"):
-        st.markdown("#### :material/tune: Ruang kerja")
-        st.caption("Susun elemen, pilih pola desain, lalu sesuaikan tampilannya.")
+        st.markdown("#### :material/tune: Properties")
         tab_editor, tab_tpl, tab_theme, tab_file = st.tabs([
-            ":material/edit_note: Editor",
+            ":material/edit_note: Properti",
             ":material/dashboard: Template",
             ":material/palette: Tema",
             ":material/folder: Berkas",
@@ -205,43 +274,39 @@ with col_right:
 
         with tab_editor:
             elements = current_page()["elements"]
-            st.markdown("##### :material/account_tree: Susunan")
-            st.caption("Komponen yang kamu tambahkan muncul di sini. Seret untuk mengubah urutan.")
+            with st.expander("Susunan", expanded=True, icon=":material/account_tree:"):
+                st.caption("Seret untuk mengubah urutan komponen.")
+                dnd = get_dnd_component()
+                dnd_signature = hashlib.md5(
+                    "|".join(
+                        [
+                            str(current_page().get("id", "")),
+                            *[f"{el.get('id','')}:{el.get('type','')}" for el in elements],
+                        ]
+                    ).encode("utf-8")
+                ).hexdigest()[:10]
 
-            dnd = get_dnd_component()
-            dnd_signature = hashlib.md5(
-                "|".join(
-                    [
-                        str(current_page().get("id", "")),
-                        *[f"{el.get('id','')}:{el.get('type','')}" for el in elements],
-                    ]
-                ).encode("utf-8")
-            ).hexdigest()[:10]
-
-            dnd_event = dnd(
-                items=[
-                    {
-                        "id": el["id"],
-                        "label": ELEMENT_LABELS[el["type"]] + summary_of(el),
-                        "icon": ICONS.get(el["type"], "widgets"),
-                    }
-                    for el in elements
-                ],
-                selected=st.session_state.selected_id,
-                key=f"layer_list_{dnd_signature}",
-                default=None,
-            )
-            if handle_dnd_event(dnd_event):
-                st.rerun()
-
-            st.divider()
-            st.markdown("##### :material/tune: Properti")
+                dnd_event = dnd(
+                    items=[
+                        {
+                            "id": el["id"],
+                            "label": ELEMENT_LABELS[el["type"]] + summary_of(el),
+                            "icon": ICONS.get(el["type"], "widgets"),
+                        }
+                        for el in elements
+                    ],
+                    selected=st.session_state.selected_id,
+                    key=f"layer_list_{dnd_signature}",
+                    default=None,
+                )
+                if handle_dnd_event(dnd_event):
+                    st.rerun()
 
             idx, sel = selected_element()
             if sel is None:
                 st.info(
-                    "Belum ada komponen yang dipilih. Klik komponen di Preview atau Susunan.",
-                    icon=":material/touch_app:",
+                    "Belum ada elemen dipilih. Pilih elemen pada canvas atau Susunan untuk mengedit properti dan tampilannya.",
+                    icon=":material/tune:",
                 )
             else:
                 edit_properties(sel, idx)
@@ -358,34 +423,39 @@ with col_right:
                     st.error("File bukan JSON yang valid.")
             st.button("Reset desain", icon=":material/restart_alt:", on_click=reset_design, use_container_width=True)
 
-# ---------------------------- DOCK KOMPONEN --------------------------------
-# Dibuat dengan widget Streamlit biasa (bukan iframe) agar selalu terlihat
+# ----------------------- BAWAH: COMPONENT LIBRARY ---------------------------
+# BOTTOM = DISCOVER. Widget Streamlit biasa (bukan iframe) agar selalu terlihat
 # dan tetap bekerja di Streamlit Cloud.
-st.markdown("### :material/widgets: Pustaka komponen")
-st.caption("Pilih atau cari komponen untuk menambahkannya ke halaman. Komponen baru akan langsung dipilih dan siap diedit.")
+st.markdown("### :material/inventory_2: Component Library")
+st.caption("Pilih komponen untuk menambahkannya ke halaman. Komponen baru langsung dipilih dan siap diedit.")
 
-f1, f2, f3 = st.columns([1.1, 1.6, 3])
-f1.selectbox("Grup", ["Semua grup"] + GROUP_ORDER, key="dock_group")
-f2.text_input("Cari komponen", key="dock_q", placeholder="Ketik nama komponen…")
-dock_group = st.session_state.get("dock_group", "Semua grup")
+f1, f2, f3 = st.columns([1.1, 1.6, 3], vertical_alignment="bottom")
+f1.selectbox("Grup", [ALL_GROUPS] + GROUP_ORDER, key="dock_group")
+f2.text_input("Cari komponen", key="dock_q", placeholder="Cari komponen...")
+dock_group = st.session_state.get("dock_group", ALL_GROUPS)
 dock_q = str(st.session_state.get("dock_q", "")).strip().lower()
 component_types = [
     t for t in sorted(ELEMENT_LABELS, key=lambda x: (GROUP_ORDER.index(ELEMENT_GROUP[x]), ELEMENT_LABELS[x]))
-    if (dock_group == "Semua grup" or ELEMENT_GROUP[t] == dock_group)
-    and (not dock_q or dock_q in ELEMENT_LABELS[t].lower())
+    if (dock_group == ALL_GROUPS or ELEMENT_GROUP[t] == dock_group)
+    and (
+        not dock_q
+        or dock_q in ELEMENT_LABELS[t].lower()
+        or dock_q in t.lower()
+        or dock_q in ELEMENT_GROUP[t].lower()
+    )
 ]
 f3.caption(
     f"{len(component_types)} dari {len(ELEMENT_LABELS)} komponen tampil · "
     f"{len(COMPONENT_BAR_SPECS)} komponen tambahan baru"
-    + (f" · grup {dock_group}" if dock_group != "Semua grup" else "")
+    + (f" · grup {dock_group}" if dock_group != ALL_GROUPS else "")
     + (f" · kata kunci “{st.session_state.get('dock_q', '')}”" if dock_q else "")
 )
 
-with st.container(height=540, border=True, key="component_library"):
+with st.container(height=380, border=True, key="component_library"):
     if not component_types:
         st.info("Tidak ada komponen yang cocok. Ubah grup atau kata kunci.", icon=":material/search_off:")
     else:
-        COMPONENTS_PER_ROW = 6
+        COMPONENTS_PER_ROW = 8
         for row_start in range(0, len(component_types), COMPONENTS_PER_ROW):
             row_types = component_types[row_start:row_start + COMPONENTS_PER_ROW]
             cols = st.columns(COMPONENTS_PER_ROW, gap="small")
@@ -402,33 +472,46 @@ with st.container(height=540, border=True, key="component_library"):
                     help=f"Tambah {label} ke halaman ({ELEMENT_GROUP[t]})",
                 )
 
-st.divider()
-
 # ---------------------- RENDER OUTPUT TERBARU ------------------------------
 with center_output.container():
     if view == "Preview":
         tpl_key = st.session_state.get("tpl_choice")
-        if st.session_state.get("tpl_preview") and tpl_key in TEMPLATES:
-            st.caption(f"Pratinjau template: {TEMPLATES[tpl_key]['name']} (belum diterapkan ke desainmu)")
-            inner = build_html(template_design(tpl_key))
+        tpl_active = bool(st.session_state.get("tpl_preview")) and tpl_key in TEMPLATES
+        if not tpl_active and not current_page()["elements"]:
+            with st.container(key="aog_empty"):
+                st.markdown("# :material/add_circle:")
+                st.markdown(
+                    '<div class="aog-empty"><h3>Mulai membangun halaman Anda</h3>'
+                    "<p>Tambahkan komponen dari Elements atau Component Library, atau gunakan AI Builder "
+                    "untuk menyusun prompt layout secara otomatis.</p></div>",
+                    unsafe_allow_html=True,
+                )
+                st.button(
+                    "Gunakan AI Builder", icon=":material/auto_awesome:", type="primary",
+                    key="empty_ai_btn", on_click=_open_ai_builder,
+                )
         else:
-            _, sel_el = selected_element()
-            inner = build_html(
-                st.session_state.design,
-                highlight_id=sel_el["id"] if sel_el else None,
-                active=st.session_state.page_idx,
-                builder_mode=True,
-            )
+            if tpl_active:
+                st.caption(f"Pratinjau template: {TEMPLATES[tpl_key]['name']} (belum diterapkan ke desainmu)")
+                inner = build_html(template_design(tpl_key))
+            else:
+                _, sel_el = selected_element()
+                inner = build_html(
+                    st.session_state.design,
+                    highlight_id=sel_el["id"] if sel_el else None,
+                    active=st.session_state.page_idx,
+                    builder_mode=True,
+                )
 
-        preview_component = get_preview_component()
-        preview_event = preview_component(
-            html=inner,
-            deviceWidth=DEVICES[device],
-            key="builder_live_preview",
-            default=None,
-        )
-        if handle_preview_event(preview_event):
-            st.rerun()
+            preview_component = get_preview_component()
+            preview_event = preview_component(
+                html=inner,
+                deviceWidth=DEVICES[device],
+                key="builder_live_preview",
+                default=None,
+            )
+            if handle_preview_event(preview_event):
+                st.rerun()
 
     elif view == "Kode HTML":
         output = build_html(st.session_state.design)
@@ -436,7 +519,7 @@ with center_output.container():
             "Unduh index.html", output, file_name="index.html",
             mime="text/html", icon=":material/download:"
         )
-        with st.container(height=PANEL_HEIGHT - 110, border=True):
+        with st.container(height=PANEL_HEIGHT - 150, border=True):
             st.code(output, language="html")
 
     else:
@@ -445,7 +528,7 @@ with center_output.container():
             "Unduh prompt_master.txt", output, file_name="prompt_master.txt",
             mime="text/plain", icon=":material/download:",
         )
-        with st.container(height=PANEL_HEIGHT - 160, border=True):
+        with st.container(height=PANEL_HEIGHT - 230, border=True):
             st.code(output, language="markdown")
 
 # Autosave terakhir dijalankan setelah seluruh widget pada rerun ini menerapkan perubahan.
