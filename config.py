@@ -26,7 +26,13 @@ ELEMENT_DEFAULTS = {
     },
     "heading": {"text": "Judul baru", "size": 36, "align": "left"},
     "text": {"text": "Tulis isi paragraf di sini.", "align": "left"},
-    "button": {"text": "Klik di sini", "link": "", "align": "left"},
+    "button": {
+        "text": "Klik di sini",
+        "link": "",
+        "align": "left",
+        "link_type": "url",  # "url" atau "page"
+        "link_target": "",  # nama halaman atau URL
+    },
     "image": {
         "url": "https://picsum.photos/800/400",
         "alt": "Gambar",
@@ -61,6 +67,11 @@ DEVICES = {
     "Ponsel (390 px)": 390,
     "Tablet (768 px)": 768,
     "Desktop (penuh)": None,
+}
+
+LINK_TYPES = {
+    "url": "Tautan eksternal (URL)",
+    "page": "Halaman internal",
 }
 
 PANEL_HEIGHT = 780
