@@ -491,6 +491,11 @@ BAR_CSS_EXTRA = """
 
 BAR_CSS = BAR_CSS + BAR_CSS_EXTRA
 
+# CSS untuk 50 komponen paket "Pro" (css_pro.py).
+from css_pro import BAR_CSS_PRO  # noqa: E402
+
+BAR_CSS = BAR_CSS + BAR_CSS_PRO
+
 # CSS untuk tampilan aplikasi editor Streamlit itu sendiri.
 APP_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -502,7 +507,7 @@ APP_CSS = """
   background: radial-gradient(900px 420px at 8% -8%, rgba(99,102,241,.16), transparent 62%),
               radial-gradient(800px 380px at 100% 0%, rgba(236,72,153,.12), transparent 60%); }
 .stApp button, .stApp input, .stApp textarea, .stApp [data-baseweb="select"] { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
-.block-container { padding-top: 1.1rem !important; padding-bottom: 1rem !important; max-width: 1680px; }
+.block-container { padding-top: 1.1rem !important; padding-bottom: 1rem !important; max-width: 1920px; }
 h5 { margin-bottom: .2rem; font-weight: 700; }
 .st-key-hero { background: linear-gradient(115deg, #3730a3 0%, #6d28d9 50%, #be185d 115%); border-radius: 20px;
   padding: 18px 26px !important; box-shadow: 0 14px 34px rgba(79,70,229,.32); }

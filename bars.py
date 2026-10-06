@@ -9,6 +9,7 @@ import streamlit as st
 
 from bar_specs import BAR_SPECS, ICON_HINT, STATUS_ICONS, STATUS_KINDS
 from bars_extra import EXTRA_BAR_RENDERERS
+from bars_pro import PRO_BAR_RENDERERS
 from config import ALIGNS
 from styles import soft_style
 from utils import clamp_int, esc, lines_of, mi, parts_of, safe_url
@@ -162,6 +163,10 @@ def render_bar(el):
     render_extra = EXTRA_BAR_RENDERERS.get(t)
     if render_extra:
         return render_extra(el)
+    # 50 komponen paket "Pro" (lihat bars_pro.py).
+    render_pro = PRO_BAR_RENDERERS.get(t)
+    if render_pro:
+        return render_pro(el)
     return ""
 
 
