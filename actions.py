@@ -52,7 +52,13 @@ def create_page_named(name=None):
     st.session_state.selected_id = None
     return st.session_state.page_idx
 
-
+def open_page_target(el):
+    """Buka halaman sesuai link_target; buat otomatis jika belum ada."""
+    name = str(el.get("link_target", "")).strip()
+    if not name:
+        return
+    create_page_named(name)
+    
 def insert_element(el_type, index=None):
     el = {"id": uuid.uuid4().hex[:8], "type": el_type}
     el.update(copy.deepcopy(ELEMENT_DEFAULTS[el_type]))
