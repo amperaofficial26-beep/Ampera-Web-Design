@@ -1,11 +1,18 @@
 """Fungsi bantu umum (tanpa Streamlit)."""
 import html
+import re
 
 from config import ALIGNS, INPUT_KINDS
 
 
 def esc(value):
     return html.escape(str(value), quote=True)
+
+
+def mi(name):
+    """Ikon Material Symbols untuk HTML hasil (nama dibersihkan)."""
+    name = re.sub(r"[^a-z0-9_]", "", str(name or "").lower()) or "circle"
+    return f'<span class="mi" aria-hidden="true">{name}</span>'
 
 
 def safe_url(url):

@@ -346,10 +346,24 @@ with col_right:
 st.markdown("### :material/widgets: Komponen")
 st.caption("Klik komponen untuk menambahkan. Komponen baru akan langsung dipilih dan dapat diedit di panel kanan.")
 
-component_types = sorted(
-    ELEMENT_LABELS,
-    key=lambda x: (GROUP_ORDER.index(ELEMENT_GROUP[x]), ELEMENT_LABELS[x])
+f1, f2, f3 = st.columns([1.1, 1.6, 3])
+f1.selectbox("Grup", ["Semua grup"] + GROUP_ORDER, key="dock_group")
+f2.text_input("Cari komponen", key="dock_q", placeholder="Ketik nama komponen…")
+dock_group = st.session_state.get("dock_group", "Semua grup")
+dock_q = str(st.session_state.get("dock_q", "")).strip().lower()
+component_types = [
+    t for t in sorted(ELEMENT_LABELS, key=lambda x: (GROUP_ORDER.index(ELEMENT_GROUP[x]), ELEMENT_LABELS[x]))
+    if (dock_group == "Semua grup" or ELEMENT_GROUP[t] == dock_group)
+    and (not dock_q or dock_q in ELEMENT_LABELS[t].lower())
+]
+f3.caption(
+    f"{len(component_types)} dari {len(ELEMENT_LABELS)} komponen tampil"
+    + (f" · grup {dock_group}" if dock_group != "Semua grup" else "")
+    + (f" · kata kunci “{st.session_state.get('dock_q', '')}”" if dock_q else "")
 )
+
+if not component_types:
+    st.info("Tidak ada komponen yang cocok. Ubah grup atau kata kunci.", icon=":material/search_off:")
 
 COMPONENTS_PER_ROW = 5
 for row_start in range(0, len(component_types), COMPONENTS_PER_ROW):
@@ -365,7 +379,7 @@ for row_start in range(0, len(component_types), COMPONENTS_PER_ROW):
             use_container_width=True,
             on_click=add_element,
             args=(t,),
-            help=f"Tambah {label} ke halaman",
+            help=f"Tambah {label} ke halaman ({ELEMENT_GROUP[t]})",
         )
 
 st.divider()

@@ -1,22 +1,17 @@
-"""Render, deskripsi, dan editor untuk 20 komponen bar.
+"""Render, deskripsi, dan editor untuk 70 komponen bar.
 
-Spesifikasi datanya ada di bar_specs.py. Untuk menambah bar baru, tambahkan
-cabang `if t == "..."` di render_bar() di bawah ini.
+Spesifikasi datanya ada di bar_specs.py.
+- 20 bar inti punya cabang `if t == "..."` di render_bar() di bawah ini.
+- 50 bar tambahan (formulir, media, sosial, toko, dll.) renderer-nya ada di
+  bars_extra.py dan otomatis dipakai lewat EXTRA_BAR_RENDERERS.
 """
-import re
-
 import streamlit as st
 
 from bar_specs import BAR_SPECS, ICON_HINT, STATUS_ICONS, STATUS_KINDS
+from bars_extra import EXTRA_BAR_RENDERERS
 from config import ALIGNS
 from styles import soft_style
-from utils import clamp_int, esc, lines_of, parts_of, safe_url
-
-
-def mi(name):
-    """Ikon Material Symbols untuk HTML hasil (nama dibersihkan)."""
-    name = re.sub(r"[^a-z0-9_]", "", str(name or "").lower()) or "circle"
-    return f'<span class="mi" aria-hidden="true">{name}</span>'
+from utils import clamp_int, esc, lines_of, mi, parts_of, safe_url
 
 
 def page_numbers(total, current):
@@ -163,6 +158,10 @@ def render_bar(el):
         no = f'<button type="button" class="btn ghost sm">{esc(g("decline"))}</button>' if g("decline") else ""
         return (f'<div class="bar cookie" role="dialog" aria-label="Persetujuan cookie"{sa}><p>{esc(g("text", ""))}</p>'
                 f'{no}<button type="button" class="btn sm">{esc(g("accept", ""))}</button></div>')
+    # 50 komponen tambahan (lihat bars_extra.py).
+    render_extra = EXTRA_BAR_RENDERERS.get(t)
+    if render_extra:
+        return render_extra(el)
     return ""
 
 
