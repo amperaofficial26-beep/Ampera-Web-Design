@@ -523,8 +523,8 @@ h5 { margin-bottom: .2rem; font-weight: 700; }
 .st-key-projbar { border-radius: 16px !important; border: 1px solid rgba(128,128,128,.22) !important; background: rgba(128,128,128,.045); }
 .st-key-panel_left, .st-key-panel_right { border-radius: 18px !important; border: 1px solid rgba(128,128,128,.22) !important;
   background: rgba(255,255,255,.68); box-shadow: 0 10px 28px rgba(15,23,42,.065); }
-.st-key-panel_left { background: linear-gradient(180deg, rgba(238,242,255,.8), rgba(255,255,255,.82)); }
-.st-key-panel_right { background: linear-gradient(180deg, rgba(250,250,255,.9), rgba(255,255,255,.82)); }
+.st-key-panel_left { background: linear-gradient(180deg, #e7f7f2 0%, #f2fbf8 100%); }
+.st-key-panel_right { background: linear-gradient(180deg, #efe9ff 0%, #f8f5ff 100%); }
 .st-key-panel_left h4, .st-key-panel_right h4 { margin: 0 0 .15rem; letter-spacing: -.02em; }
 .st-key-panel_left [data-testid="stMetric"] { padding: .55rem .6rem; border: 1px solid rgba(99,102,241,.14);
   border-radius: 12px; background: rgba(255,255,255,.72); }
