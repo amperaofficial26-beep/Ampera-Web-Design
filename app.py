@@ -13,7 +13,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="UI Builder",
-    page_icon="🧩",
+    page_icon=":material/widgets:",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -68,6 +68,8 @@ FONTS = {
     "Sans-serif modern": "'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     "Serif klasik": "Georgia, 'Times New Roman', serif",
     "Monospace": "'Courier New', Consolas, monospace",
+    "Humanis": "'Trebuchet MS', 'Segoe UI', Verdana, sans-serif",
+    "Serif elegan": "'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif",
 }
 
 ALIGNS = ["left", "center", "right"]
@@ -81,20 +83,7 @@ DEVICES = {
 PANEL_HEIGHT = 780
 PROJECTS_DIR = Path(__file__).resolve().parent / "projects"
 
-ICONS = {
-    "navbar": "🧭",
-    "heading": "🔠",
-    "text": "📝",
-    "button": "🔘",
-    "image": "🖼️",
-    "gallery": "🎞️",
-    "list": "📋",
-    "input": "⌨️",
-    "card": "🗂️",
-    "divider": "➖",
-    "spacer": "↕️",
-    "footer": "🔻",
-}
+ICONS = {}
 
 INPUT_KINDS = {
     "text": "Teks",
@@ -121,6 +110,9 @@ SHADOW_OPTIONS = {
     "Halus": "0 2px 8px rgba(0,0,0,.08)",
     "Sedang": "0 6px 18px rgba(0,0,0,.12)",
     "Kuat": "0 12px 30px rgba(0,0,0,.18)",
+    "Kaca": "0 8px 32px rgba(31,38,135,.2)",
+    "Gelap": "0 6px 18px rgba(0,0,0,.35)",
+    "Brutal": "6px 6px 0 #111111",
 }
 
 WIDTH_OPTIONS = {
@@ -130,6 +122,481 @@ WIDTH_OPTIONS = {
     "75%": "75%",
     "50%": "50%",
 }
+
+
+# ---------------------------------------------------------------------------
+# 20 komponen bar (navigasi, aksi, informasi, data)
+# ---------------------------------------------------------------------------
+GROUP_ORDER = ["Dasar", "Navigasi", "Aksi", "Informasi", "Data"]
+STATUS_KINDS = {"info": "Info", "success": "Sukses", "warning": "Peringatan", "error": "Galat"}
+STATUS_ICONS = {"info": "info", "success": "check_circle", "warning": "warning", "error": "error"}
+ICON_HINT = "Nama ikon mengikuti Material Symbols (contoh: home, search, person). Daftar lengkap: fonts.google.com/icons"
+
+BAR_SPECS = {
+    # ---- Navigasi ----
+    "bottomnav": {
+        "label": "Navigasi bawah", "icon": "bottom_navigation", "group": "Navigasi", "hint": True,
+        "defaults": {"items": "Beranda|home\nCari|search\nSimpan|favorite\nProfil|person", "active": 1},
+        "fields": [("items", "Item (label|ikon, satu per baris)", "area"),
+                   ("active", "Item aktif (urutan)", "int", (1, 6))],
+    },
+    "tabbar": {
+        "label": "Tab bar", "icon": "tab", "group": "Navigasi",
+        "defaults": {"items": "Ringkasan\nAktivitas\nPengaturan", "active": 1},
+        "fields": [("items", "Tab (satu per baris)", "area"), ("active", "Tab aktif (urutan)", "int", (1, 8))],
+    },
+    "breadcrumb": {
+        "label": "Breadcrumb", "icon": "chevron_right", "group": "Navigasi",
+        "defaults": {"items": "Beranda\nProduk\nDetail"},
+        "fields": [("items", "Jalur (satu per baris)", "area")],
+    },
+    "sidemenu": {
+        "label": "Menu samping", "icon": "side_navigation", "group": "Navigasi", "hint": True,
+        "defaults": {"title": "Menu", "active": 1,
+                     "items": "Dasbor|dashboard\nPesanan|shopping_bag\nPelanggan|group\nLaporan|bar_chart\nPengaturan|settings"},
+        "fields": [("title", "Judul menu", "text"), ("items", "Item (label|ikon, satu per baris)", "area"),
+                   ("active", "Item aktif (urutan)", "int", (1, 10))],
+    },
+    "pagination": {
+        "label": "Paginasi", "icon": "format_list_numbered", "group": "Navigasi",
+        "defaults": {"pages": 10, "current": 3},
+        "fields": [("pages", "Jumlah halaman", "int", (1, 99)), ("current", "Halaman aktif", "int", (1, 99))],
+    },
+    # ---- Aksi ----
+    "toolbar": {
+        "label": "Toolbar aksi", "icon": "construction", "group": "Aksi", "hint": True,
+        "defaults": {"items": "Baru|add\nSalin|content_copy\nBagikan|share\nHapus|delete"},
+        "fields": [("items", "Aksi (label|ikon, satu per baris)", "area")],
+    },
+    "searchbar": {
+        "label": "Bar pencarian", "icon": "search", "group": "Aksi",
+        "defaults": {"placeholder": "Cari sesuatu…", "button": "Cari"},
+        "fields": [("placeholder", "Placeholder", "text"), ("button", "Label tombol", "text")],
+    },
+    "filterbar": {
+        "label": "Bar filter", "icon": "filter_list", "group": "Aksi",
+        "defaults": {"items": "Semua\nBaru\nPopuler\nDiskon", "active": 1},
+        "fields": [("items", "Filter (satu per baris)", "area"), ("active", "Filter aktif (urutan)", "int", (1, 10))],
+    },
+    "fab": {
+        "label": "Tombol melayang", "icon": "add_circle", "group": "Aksi", "hint": True,
+        "defaults": {"icon": "add", "text": "Tambah", "align": "right"},
+        "fields": [("icon", "Ikon", "text"), ("text", "Label (boleh kosong)", "text"),
+                   ("align", "Posisi", "sel", {"left": "Kiri", "center": "Tengah", "right": "Kanan"})],
+    },
+    "socialbar": {
+        "label": "Bar sosial", "icon": "share", "group": "Aksi", "hint": True,
+        "defaults": {"items": "Instagram|#|photo_camera\nWhatsApp|#|chat\nEmail|#|mail\nWebsite|#|public"},
+        "fields": [("items", "Tautan (label|url|ikon, satu per baris)", "area")],
+    },
+    # ---- Informasi ----
+    "announcement": {
+        "label": "Bar pengumuman", "icon": "campaign", "group": "Informasi",
+        "defaults": {"text": "Diskon 20% sampai akhir bulan.", "link_text": "Lihat promo", "link": "#"},
+        "fields": [("text", "Teks", "text"), ("link_text", "Label tautan", "text"), ("link", "URL tautan", "text")],
+    },
+    "statusbar": {
+        "label": "Bar status", "icon": "info", "group": "Informasi",
+        "defaults": {"kind": "info", "title": "Pemberitahuan", "text": "Pemeliharaan sistem dijadwalkan malam ini pukul 23.00."},
+        "fields": [("kind", "Jenis", "sel", STATUS_KINDS), ("title", "Judul", "text"), ("text", "Isi", "text")],
+    },
+    "progressbar": {
+        "label": "Bar progres", "icon": "linear_scale", "group": "Informasi",
+        "defaults": {"label": "Kapasitas penyimpanan", "value": 65},
+        "fields": [("label", "Label", "text"), ("value", "Nilai (%)", "int", (0, 100))],
+    },
+    "stepper": {
+        "label": "Bar langkah", "icon": "timeline", "group": "Informasi",
+        "defaults": {"steps": "Keranjang\nAlamat\nPembayaran\nSelesai", "current": 2},
+        "fields": [("steps", "Langkah (satu per baris)", "area"), ("current", "Langkah saat ini", "int", (1, 8))],
+    },
+    "ratingbar": {
+        "label": "Bar rating", "icon": "star", "group": "Informasi",
+        "defaults": {"label": "Ulasan pelanggan", "value": 4.5, "count": "(128 ulasan)"},
+        "fields": [("label", "Label", "text"), ("value", "Nilai bintang", "float", (0.0, 5.0, 0.5)),
+                   ("count", "Keterangan jumlah", "text")],
+    },
+    # ---- Data ----
+    "statsbar": {
+        "label": "Bar statistik", "icon": "monitoring", "group": "Data",
+        "defaults": {"items": "12 rb|Pengguna\n98%|Puas\n24/7|Dukungan"},
+        "fields": [("items", "Angka (angka|label, satu per baris)", "area")],
+    },
+    "pricebar": {
+        "label": "Bar harga", "icon": "payments", "group": "Data",
+        "defaults": {"price": "Rp 149.000", "caption": "Sudah termasuk pajak", "button": "Beli sekarang", "link": "#"},
+        "fields": [("price", "Harga", "text"), ("caption", "Keterangan", "text"),
+                   ("button", "Label tombol", "text"), ("link", "URL tombol", "text")],
+    },
+    "categorybar": {
+        "label": "Bar kategori", "icon": "category", "group": "Data", "hint": True,
+        "defaults": {"items": "Makanan|restaurant\nMinuman|local_cafe\nBelanja|shopping_bag\nTransport|directions_car\nLainnya|apps"},
+        "fields": [("items", "Kategori (label|ikon, satu per baris)", "area")],
+    },
+    "profilebar": {
+        "label": "Bar profil", "icon": "account_circle", "group": "Data",
+        "defaults": {"name": "Nama Lengkap", "role": "Jabatan", "avatar": "", "action": "Hubungi"},
+        "fields": [("name", "Nama", "text"), ("role", "Jabatan / keterangan", "text"),
+                   ("avatar", "URL foto (kosongkan untuk inisial)", "text"), ("action", "Label tombol (boleh kosong)", "text")],
+    },
+    "cookiebar": {
+        "label": "Bar persetujuan", "icon": "cookie", "group": "Data",
+        "defaults": {"text": "Kami memakai cookie untuk meningkatkan pengalamanmu.", "accept": "Terima", "decline": "Tolak"},
+        "fields": [("text", "Teks", "text"), ("accept", "Tombol setuju", "text"), ("decline", "Tombol tolak (boleh kosong)", "text")],
+    },
+}
+
+ELEMENT_GROUP = {t: "Dasar" for t in ELEMENT_LABELS}
+ELEMENT_GROUP["navbar"] = "Navigasi"
+for _t, _s in BAR_SPECS.items():
+    ELEMENT_LABELS[_t] = _s["label"]
+    ELEMENT_DEFAULTS[_t] = copy.deepcopy(_s["defaults"])
+    ICONS[_t] = _s["icon"]
+    ELEMENT_GROUP[_t] = _s["group"]
+ICONS.update({
+    "navbar": "menu", "heading": "title", "text": "notes", "button": "smart_button", "image": "image",
+    "gallery": "photo_library", "list": "format_list_bulleted", "input": "edit_note",
+    "card": "branding_watermark", "divider": "horizontal_rule", "spacer": "height", "footer": "call_to_action",
+})
+
+
+def mi(name):
+    """Ikon Material Symbols untuk HTML hasil (nama dibersihkan)."""
+    name = re.sub(r"[^a-z0-9_]", "", str(name or "").lower()) or "circle"
+    return f'<span class="mi" aria-hidden="true">{name}</span>'
+
+
+def clamp_int(value, lo, hi, default):
+    try:
+        n = int(float(value))
+    except (TypeError, ValueError):
+        n = default
+    return max(lo, min(hi, n))
+
+
+def parts_of(value, n):
+    """Pecah tiap baris 'a|b|c' menjadi daftar n kolom (dilengkapi string kosong)."""
+    rows = []
+    for ln in lines_of(value):
+        cols = [c.strip() for c in ln.split("|")]
+        cols += [""] * (n - len(cols))
+        rows.append(cols[:n])
+    return rows
+
+
+def soft_style(el, extra=""):
+    """Gaya inline hanya untuk properti yang diubah pengguna, agar gaya bawaan bar tetap tampil."""
+    s = ensure_element_style(el)
+    d = ELEMENT_STYLE_DEFAULTS
+    out = []
+    if s.get("background") != d["background"]:
+        out.append(f'background:{esc(s.get("background"))}')
+    if s.get("color") != d["color"]:
+        out.append(f'color:{esc(s.get("color"))}')
+    bw = clamp_int(s.get("border_width"), 0, 8, 0)
+    if bw:
+        out.append(f'border:{bw}px solid {esc(s.get("border_color", "#d1d5db"))}')
+    if clamp_int(s.get("radius"), 0, 80, 8) != d["radius"]:
+        out.append(f'border-radius:{clamp_int(s.get("radius"), 0, 80, 8)}px')
+    if s.get("shadow") != d["shadow"]:
+        out.append(f'box-shadow:{esc(s.get("shadow"))}')
+    if clamp_int(s.get("padding"), 0, 80, 0):
+        out.append(f'padding:{clamp_int(s.get("padding"), 0, 80, 0)}px')
+    if s.get("width") != d["width"]:
+        out.append(f'width:{esc(s.get("width"))}')
+    css = ";".join(out)
+    if extra:
+        css = (css + ";" if css else "") + extra
+    return css
+
+
+def page_numbers(total, current):
+    keep = sorted({1, total, current - 1, current, current + 1})
+    result, prev = [], 0
+    for n in keep:
+        if n < 1 or n > total:
+            continue
+        if prev and n - prev > 1:
+            result.append(None)
+        result.append(n)
+        prev = n
+    return result
+
+
+def render_bar(el):
+    t = el["type"]
+    css = soft_style(el)
+    sa = f' style="{css}"' if css else ""
+    g = el.get
+
+    if t == "bottomnav":
+        rows = parts_of(g("items"), 2)
+        act = clamp_int(g("active"), 1, max(1, len(rows)), 1) - 1
+        inner = "".join(
+            f'<a class="bn-item{" on" if i == act else ""}" href="#">'
+            f'{mi(ic)}<span>{esc(lb)}</span></a>' for i, (lb, ic) in enumerate(rows))
+        return f'<nav class="bar bottomnav" aria-label="Navigasi bawah"{sa}>{inner}</nav>'
+    if t == "tabbar":
+        rows = lines_of(g("items"))
+        act = clamp_int(g("active"), 1, max(1, len(rows)), 1) - 1
+        inner = "".join(f'<a class="tab{" on" if i == act else ""}" href="#" role="tab">{esc(lb)}</a>' for i, lb in enumerate(rows))
+        return f'<div class="bar tabbar" role="tablist"{sa}>{inner}</div>'
+    if t == "breadcrumb":
+        rows = lines_of(g("items"))
+        bits = []
+        for i, lb in enumerate(rows):
+            if i == len(rows) - 1:
+                bits.append(f'<span class="cur" aria-current="page">{esc(lb)}</span>')
+            else:
+                bits.append(f'<a href="#">{esc(lb)}</a>{mi("chevron_right")}')
+        return f'<nav class="bar crumbs" aria-label="Breadcrumb"{sa}>{"".join(bits)}</nav>'
+    if t == "sidemenu":
+        rows = parts_of(g("items"), 2)
+        act = clamp_int(g("active"), 1, max(1, len(rows)), 1) - 1
+        inner = "".join(
+            f'<a class="sm-item{" on" if i == act else ""}" href="#">{mi(ic)}<span>{esc(lb)}</span></a>'
+            for i, (lb, ic) in enumerate(rows))
+        title = f'<div class="sm-title">{esc(g("title", ""))}</div>' if g("title") else ""
+        return f'<nav class="bar sidemenu"{sa}>{title}{inner}</nav>'
+    if t == "pagination":
+        total = clamp_int(g("pages"), 1, 99, 10)
+        cur = clamp_int(g("current"), 1, total, 1)
+        bits = [f'<a href="#" aria-label="Sebelumnya">{mi("chevron_left")}</a>']
+        for n in page_numbers(total, cur):
+            bits.append('<span class="dots">…</span>' if n is None else
+                        f'<a href="#" class="{"on" if n == cur else ""}">{n}</a>')
+        bits.append(f'<a href="#" aria-label="Berikutnya">{mi("chevron_right")}</a>')
+        return f'<nav class="bar pager" aria-label="Paginasi"{sa}>{"".join(bits)}</nav>'
+    if t == "toolbar":
+        rows = parts_of(g("items"), 2)
+        inner = "".join(f'<button type="button" class="tb-btn">{mi(ic)}<span>{esc(lb)}</span></button>' for lb, ic in rows)
+        return f'<div class="bar toolbar" role="toolbar"{sa}>{inner}</div>'
+    if t == "searchbar":
+        return (f'<div class="bar searchbar"{sa}>{mi("search")}'
+                f'<input type="search" placeholder="{esc(g("placeholder", ""))}" aria-label="Pencarian">'
+                f'<button type="button" class="btn">{esc(g("button", ""))}</button></div>')
+    if t == "filterbar":
+        rows = lines_of(g("items"))
+        act = clamp_int(g("active"), 1, max(1, len(rows)), 1) - 1
+        inner = "".join(f'<a class="fchip{" on" if i == act else ""}" href="#">{esc(lb)}</a>' for i, lb in enumerate(rows))
+        return f'<div class="bar chips"{sa}>{inner}</div>'
+    if t == "fab":
+        align = g("align") if g("align") in ALIGNS else "right"
+        label = f'<span>{esc(g("text", ""))}</span>' if g("text") else ""
+        return (f'<div class="fabwrap" style="text-align:{align}"><a class="fab" href="#" '
+                f'aria-label="{esc(g("text") or "Aksi")}"{sa}>{mi(g("icon"))}{label}</a></div>')
+    if t == "socialbar":
+        rows = parts_of(g("items"), 3)
+        inner = "".join(f'<a href="{esc(safe_url(u))}">{mi(ic or "link")}<span>{esc(lb)}</span></a>' for lb, u, ic in rows)
+        return f'<div class="bar social"{sa}>{inner}</div>'
+    if t == "announcement":
+        link = ""
+        if g("link_text"):
+            link = f'<a href="{esc(safe_url(g("link", "#")))}">{esc(g("link_text"))}</a>'
+        return f'<div class="bar announce"{sa}>{esc(g("text", ""))}{link}</div>'
+    if t == "statusbar":
+        kind = g("kind") if g("kind") in STATUS_KINDS else "info"
+        title = f'<strong>{esc(g("title", ""))}</strong> ' if g("title") else ""
+        return (f'<div class="bar status {kind}" role="status"{sa}>{mi(STATUS_ICONS[kind])}'
+                f'<div>{title}{esc(g("text", ""))}</div></div>')
+    if t == "progressbar":
+        v = clamp_int(g("value"), 0, 100, 0)
+        return (f'<div class="bar progress"{sa}><div class="pg-head"><span>{esc(g("label", ""))}</span><span>{v}%</span></div>'
+                f'<div class="pg-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{v}">'
+                f'<div class="pg-fill" style="width:{v}%"></div></div></div>')
+    if t == "stepper":
+        rows = lines_of(g("steps"))
+        cur = clamp_int(g("current"), 1, max(1, len(rows)), 1)
+        inner = []
+        for i, lb in enumerate(rows, start=1):
+            state = "done" if i < cur else ("now" if i == cur else "")
+            dot = mi("check") if i < cur else str(i)
+            inner.append(f'<div class="st-step {state}"><div class="st-dot">{dot}</div>{esc(lb)}</div>')
+        return f'<div class="bar stepper"{sa}>{"".join(inner)}</div>'
+    if t == "ratingbar":
+        try:
+            val = max(0.0, min(5.0, float(g("value", 0) or 0)))
+        except (TypeError, ValueError):
+            val = 0.0
+        stars = ""
+        for i in range(1, 6):
+            if val >= i - 0.25:
+                stars += mi("star")
+            elif val >= i - 0.75:
+                stars += mi("star_half")
+            else:
+                stars += f'<span class="off">{mi("star")}</span>'
+        lab = f'<strong>{val:g}</strong>'
+        return (f'<div class="bar rating"{sa}><span class="stars" role="img" aria-label="{val:g} dari 5">{stars}</span>'
+                f'{lab}<span>{esc(g("label", ""))}</span><small>{esc(g("count", ""))}</small></div>')
+    if t == "statsbar":
+        rows = parts_of(g("items"), 2)
+        inner = "".join(f'<div class="stat"><strong>{esc(n)}</strong><span>{esc(lb)}</span></div>' for n, lb in rows)
+        return f'<div class="bar stats"{sa}>{inner}</div>'
+    if t == "pricebar":
+        btn = f'<a class="btn" href="{esc(safe_url(g("link", "#")))}">{esc(g("button", ""))}</a>' if g("button") else ""
+        return (f'<div class="bar pricebar"{sa}><div><strong>{esc(g("price", ""))}</strong>'
+                f'<small>{esc(g("caption", ""))}</small></div>{btn}</div>')
+    if t == "categorybar":
+        rows = parts_of(g("items"), 2)
+        inner = "".join(f'<a class="cat" href="#"><span class="cat-ico">{mi(ic)}</span>{esc(lb)}</a>' for lb, ic in rows)
+        return f'<div class="bar cats"{sa}>{inner}</div>'
+    if t == "profilebar":
+        name = str(g("name", "") or "")
+        if g("avatar"):
+            av = f'<img src="{esc(safe_url(g("avatar")))}" alt="">'
+        else:
+            av = esc((name.strip()[:1] or "?").upper())
+        btn = f'<a class="btn sm" href="#">{esc(g("action"))}</a>' if g("action") else ""
+        return (f'<div class="bar profilebar"{sa}><div class="avatar">{av}</div>'
+                f'<div class="pf-text"><strong>{esc(name)}</strong><small>{esc(g("role", ""))}</small></div>{btn}</div>')
+    if t == "cookiebar":
+        no = f'<button type="button" class="btn ghost sm">{esc(g("decline"))}</button>' if g("decline") else ""
+        return (f'<div class="bar cookie" role="dialog" aria-label="Persetujuan cookie"{sa}><p>{esc(g("text", ""))}</p>'
+                f'{no}<button type="button" class="btn sm">{esc(g("accept", ""))}</button></div>')
+    return ""
+
+
+def describe_bar(el):
+    spec = BAR_SPECS[el["type"]]
+    bits = []
+    for field in spec["fields"]:
+        k, label = field[0], field[1]
+        val = str(el.get(k, "")).replace("\n", " / ")
+        bits.append(f'{label}: "{val}"')
+    note = "; item ber-format label|ikon memakai nama ikon Material Symbols" if spec.get("hint") else ""
+    return "; ".join(bits) + note
+
+
+def edit_bar_fields(el, key):
+    spec = BAR_SPECS[el["type"]]
+    for field in spec["fields"]:
+        k, label, kind = field[0], field[1], field[2]
+        extra = field[3] if len(field) > 3 else None
+        wk = f"{key}_{k}"
+        if kind == "text":
+            el[k] = st.text_input(label, str(el.get(k, "")), key=wk)
+        elif kind == "area":
+            el[k] = st.text_area(label, str(el.get(k, "")), key=wk, height=120)
+        elif kind == "int":
+            lo, hi = extra
+            el[k] = st.slider(label, lo, hi, clamp_int(el.get(k), lo, hi, lo), key=wk)
+        elif kind == "float":
+            lo, hi, step = extra
+            try:
+                cur = max(lo, min(hi, float(el.get(k, lo))))
+            except (TypeError, ValueError):
+                cur = lo
+            el[k] = st.slider(label, float(lo), float(hi), float(cur), step=float(step), key=wk)
+        elif kind == "sel":
+            keys = list(extra)
+            cur = el.get(k) if el.get(k) in keys else keys[0]
+            el[k] = st.selectbox(label, keys, keys.index(cur), format_func=lambda v, e=extra: e[v], key=wk)
+    if spec.get("hint"):
+        st.caption(ICON_HINT)
+
+
+ICON_LINK = (
+    '<link rel="preconnect" href="https://fonts.googleapis.com">'
+    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:'
+    'opsz,wght,FILL,GRAD@24,400,0..1,0">'
+)
+
+BAR_CSS = """
+  .mi { font-family: 'Material Symbols Rounded'; font-weight: 400; font-style: normal; font-size: 20px;
+    line-height: 1; display: inline-block; width: 1em; overflow: hidden; white-space: nowrap;
+    vertical-align: middle; font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; flex: none; }
+  .bar { border-radius: 12px; }
+  .bar a { color: inherit; text-decoration: none; }
+  .bar .btn { color: var(--on-primary); }
+  .bar .btn.sm { padding: 8px 14px; font-size: 14px; }
+  .bar .btn.ghost { background: transparent; color: var(--text); border: 1px solid rgba(128,128,128,.5); }
+  .bottomnav { display: flex; justify-content: space-around; position: sticky; bottom: 0; z-index: 5;
+    background: var(--bg); border: 1px solid rgba(128,128,128,.3); padding: 8px 4px; box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
+  .bn-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px;
+    padding: 4px 12px; border-radius: 12px; opacity: .65; }
+  .bn-item.on { color: var(--primary); opacity: 1; font-weight: 600; }
+  .tabbar { display: flex; gap: 4px; overflow-x: auto; border-bottom: 2px solid rgba(128,128,128,.25); border-radius: 0; }
+  .tabbar .tab { padding: 10px 16px; margin-bottom: -2px; border-bottom: 2px solid transparent; opacity: .7; white-space: nowrap; }
+  .tabbar .tab.on { border-color: var(--primary); color: var(--primary); opacity: 1; font-weight: 600; }
+  .crumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; font-size: 14px; }
+  .crumbs a { opacity: .7; }
+  .crumbs .cur { font-weight: 600; }
+  .crumbs .mi { font-size: 18px; opacity: .45; }
+  .sidemenu { display: flex; flex-direction: column; gap: 2px; padding: 8px; border: 1px solid rgba(128,128,128,.3); }
+  .sm-title { font-size: 13px; opacity: .6; padding: 6px 12px; }
+  .sm-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; }
+  .sm-item:hover { background: rgba(128,128,128,.12); }
+  .sm-item.on { background: var(--primary); color: var(--on-primary); }
+  .pager { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  .pager a { min-width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(128,128,128,.35); border-radius: 10px; padding: 0 8px; }
+  .pager a.on { background: var(--primary); border-color: var(--primary); color: var(--on-primary); font-weight: 600; }
+  .pager .dots { display: inline-flex; align-items: center; opacity: .6; }
+  .toolbar { display: flex; gap: 6px; flex-wrap: wrap; padding: 6px; border: 1px solid rgba(128,128,128,.3); }
+  .tb-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 10px; border: 0;
+    background: transparent; color: inherit; font: inherit; font-size: 14px; cursor: pointer; }
+  .tb-btn:hover { background: rgba(128,128,128,.15); }
+  .searchbar { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; border: 1px solid rgba(128,128,128,.4); border-radius: 999px; }
+  .searchbar input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; padding: 6px 0; }
+  .searchbar .btn { padding: 8px 18px; border-radius: 999px; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+  .fchip { white-space: nowrap; padding: 7px 14px; border: 1px solid rgba(128,128,128,.4); border-radius: 999px; font-size: 14px; }
+  .fchip.on { background: var(--primary); border-color: var(--primary); color: var(--on-primary); font-weight: 600; }
+  .fabwrap { position: sticky; bottom: 16px; z-index: 5; pointer-events: none; }
+  .fab { pointer-events: auto; display: inline-flex; align-items: center; gap: 8px; background: var(--primary);
+    color: var(--on-primary) !important; padding: 14px 20px; border-radius: 999px; box-shadow: 0 8px 20px rgba(0,0,0,.25); font-weight: 600; }
+  .social { display: flex; gap: 8px; flex-wrap: wrap; }
+  .social a { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid rgba(128,128,128,.35); border-radius: 999px; font-size: 14px; }
+  .announce { background: var(--primary); color: var(--on-primary); text-align: center; padding: 10px 16px; font-size: 14px; border-radius: 0; }
+  .announce a { color: var(--on-primary); text-decoration: underline; font-weight: 600; margin-left: 8px; }
+  .status { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid; border-left-width: 4px; font-size: 14px; }
+  .status.info { background: #eff6ff; border-color: #3b82f6; color: #1e3a8a; }
+  .status.success { background: #f0fdf4; border-color: #22c55e; color: #14532d; }
+  .status.warning { background: #fffbeb; border-color: #f59e0b; color: #78350f; }
+  .status.error { background: #fef2f2; border-color: #ef4444; color: #7f1d1d; }
+  .pg-head { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; }
+  .pg-track { height: 10px; border-radius: 999px; background: rgba(128,128,128,.25); overflow: hidden; }
+  .pg-fill { height: 100%; background: var(--primary); border-radius: 999px; }
+  .stepper { display: flex; align-items: flex-start; }
+  .st-step { flex: 1; text-align: center; position: relative; font-size: 13px; }
+  .st-step::before { content: ""; position: absolute; top: 15px; left: -50%; width: 100%; height: 2px; background: rgba(128,128,128,.35); }
+  .st-step:first-child::before { display: none; }
+  .st-dot { position: relative; z-index: 1; width: 32px; height: 32px; margin: 0 auto 6px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; background: var(--bg); border: 2px solid rgba(128,128,128,.5); font-weight: 600; font-size: 14px; }
+  .st-dot .mi { font-size: 18px; }
+  .st-step.done .st-dot, .st-step.now .st-dot { border-color: var(--primary); }
+  .st-step.done .st-dot { background: var(--primary); color: var(--on-primary); }
+  .st-step.done::before, .st-step.now::before { background: var(--primary); }
+  .st-step.now { color: var(--primary); font-weight: 600; }
+  .rating { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .rating .stars { display: inline-flex; color: #f59e0b; }
+  .rating .mi { font-size: 22px; font-variation-settings: 'FILL' 1; }
+  .rating .off { opacity: .3; display: inline-flex; }
+  .rating small { opacity: .65; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; }
+  .stat { text-align: center; padding: 14px 8px; border: 1px solid rgba(128,128,128,.3); border-radius: 12px; }
+  .stat strong { display: block; font-size: 24px; color: var(--primary); }
+  .stat span { font-size: 13px; opacity: .7; }
+  .pricebar { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 12px 16px; background: var(--bg); border: 1px solid rgba(128,128,128,.3); box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
+  .pricebar strong { font-size: 20px; }
+  .pricebar small { display: block; opacity: .65; }
+  .cats { display: flex; gap: 14px; overflow-x: auto; padding: 4px; }
+  .cat { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; min-width: 64px; }
+  .cat-ico { width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+    background: rgba(128,128,128,.14); color: var(--primary); }
+  .cat-ico .mi { font-size: 26px; }
+  .profilebar { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid rgba(128,128,128,.3); }
+  .avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: flex;
+    align-items: center; justify-content: center; font-weight: 700; overflow: hidden; flex: none; }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .pf-text { flex: 1; min-width: 0; }
+  .pf-text small { display: block; opacity: .65; }
+  .cookie { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px 16px;
+    border: 1px solid rgba(128,128,128,.3); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+  .cookie p { flex: 1; min-width: 180px; margin: 0; font-size: 14px; }
+"""
 
 
 def ensure_element_style(el):
@@ -519,6 +986,10 @@ def FOOT(text):
     return mk("footer", text=text)
 
 
+def BAR(el_type, **props):
+    return mk(el_type, **props)
+
+
 def theme_of(primary, bg, text, font="Sans-serif modern", width=720):
     return {"primary": primary, "bg": bg, "text": text, "font": font, "width": width}
 
@@ -885,6 +1356,296 @@ TEMPLATES = {
             B("Unduh laporan"),
         ]}],
     },
+    # ------------------------------------------------------------------
+    # Template tambahan (memakai komponen bar)
+    # ------------------------------------------------------------------
+    "profil_perusahaan": {
+        "name": "Profil perusahaan",
+        "category": "Bisnis",
+        "desc": "Pengumuman, angka pencapaian, daftar layanan, dan tautan sosial.",
+        "title": "Karya Mandiri Teknik",
+        "theme": theme_of("#1d4ed8", "#f8fafc", "#0f172a", width=820),
+        "pages": [{"name": "Profil", "elements": [
+            BAR("announcement", text="Kantor cabang baru kami kini buka di Surabaya.", link_text="Selengkapnya", link="#"),
+            NAV("Karya Mandiri", [("Tentang", "#"), ("Layanan", "#"), ("Kontak", "#")]),
+            SPC(8),
+            H("Mitra teknik tepercaya sejak 2009", 38),
+            P("Kami membantu pabrik dan gudang menjaga mesin tetap berjalan, dengan teknisi bersertifikat dan jadwal perawatan yang jelas."),
+            IMG("factory", "Tim teknisi di lapangan"),
+            BAR("statsbar", items="15 tahun|Pengalaman\n480|Klien aktif\n98%|Tepat waktu"),
+            H("Layanan kami", 28),
+            CARD("Perawatan berkala", "Pemeriksaan terjadwal supaya mesin tidak berhenti mendadak."),
+            CARD("Perbaikan darurat", "Teknisi tiba dalam empat jam untuk area Jawa Timur."),
+            CARD("Audit efisiensi", "Laporan tertulis berisi temuan dan saran penghematan energi."),
+            BAR("socialbar", items="LinkedIn|#|work\nEmail|#|mail\nTelepon|#|call"),
+            FOOT("© 2026 PT Karya Mandiri Teknik"),
+        ]}],
+    },
+    "layanan_jasa": {
+        "name": "Layanan jasa rumah",
+        "category": "Bisnis",
+        "desc": "Kategori layanan dengan ikon, alur kerja bertahap, dan ajakan memesan.",
+        "title": "Sigap Rumah",
+        "theme": theme_of("#0d9488", "#ffffff", "#134e4a", width=700),
+        "pages": [{"name": "Layanan", "elements": [
+            NAV("Sigap Rumah", [("Layanan", "#"), ("Harga", "#"), ("Bantuan", "#")]),
+            SPC(8),
+            H("Masalah rumah beres tanpa repot", 36),
+            P("Pilih jenis layanan, tentukan jadwal, dan teknisi kami datang ke rumahmu."),
+            BAR("categorybar", items="Servis AC|ac_unit\nListrik|bolt\nPipa|plumbing\nCat|format_paint\nKebersihan|cleaning_services"),
+            H("Cara kerja", 26),
+            BAR("stepper", steps="Pesan\nTeknisi datang\nPengerjaan\nSelesai", current=2),
+            CARD("Garansi 30 hari", "Bila masalah muncul lagi, kami perbaiki tanpa biaya tambahan."),
+            CARD("Harga dimuka", "Biaya diberitahukan sebelum pengerjaan dimulai."),
+            B("Pesan teknisi", "#", "center"),
+            FOOT("Layanan setiap hari, pukul 07.00 sampai 21.00"),
+        ]}],
+    },
+    "tim_kami": {
+        "name": "Tim kami",
+        "category": "Bisnis",
+        "desc": "Perkenalan anggota tim dengan bar profil dan ajakan bergabung.",
+        "title": "Studio Lentera",
+        "theme": theme_of("#7c3aed", "#faf5ff", "#2e1065", width=640),
+        "pages": [{"name": "Tim", "elements": [
+            NAV("Studio Lentera", [("Karya", "#"), ("Tim", "#"), ("Kontak", "#")]),
+            SPC(8),
+            H("Orang-orang di balik Lentera", 34),
+            P("Tim kecil dengan latar desain, riset, dan teknologi yang bekerja dari tiga kota."),
+            BAR("profilebar", name="Dewi Anggraini", role="Direktur kreatif", action="Profil"),
+            BAR("profilebar", name="Bagas Pratama", role="Insinyur utama", action="Profil"),
+            BAR("profilebar", name="Citra Lestari", role="Peneliti pengguna", action="Profil"),
+            BAR("profilebar", name="Fajar Nugroho", role="Manajer proyek", action="Profil"),
+            DIV(),
+            H("Ingin bergabung?", 26, "center"),
+            B("Lihat lowongan", "#", "center"),
+            FOOT("© 2026 Studio Lentera"),
+        ]}],
+    },
+    "dashboard_admin": {
+        "name": "Dasbor admin",
+        "category": "Data",
+        "desc": "Menu samping, angka ringkas, bar progres, peringatan, toolbar, dan paginasi.",
+        "title": "Toko Kita Admin",
+        "theme": theme_of("#4f46e5", "#f8fafc", "#0f172a", width=920),
+        "pages": [{"name": "Dasbor", "elements": [
+            BAR("sidemenu", title="Toko Kita", active=1,
+                items="Dasbor|dashboard\nPesanan|shopping_bag\nPelanggan|group\nLaporan|bar_chart\nPengaturan|settings"),
+            H("Dasbor hari ini", 30),
+            BAR("statsbar", items="128|Pesanan\nRp 9,4 jt|Pendapatan\n32|Pelanggan baru\n4,7|Rating"),
+            BAR("statusbar", kind="warning", title="Stok menipis", text="Lima produk tersisa kurang dari sepuluh unit."),
+            H("Penggunaan sumber daya", 22),
+            BAR("progressbar", label="Penyimpanan foto produk", value=72),
+            BAR("progressbar", label="Kuota pesan WhatsApp", value=45),
+            BAR("progressbar", label="Kuota iklan bulan ini", value=88),
+            BAR("toolbar", items="Tambah produk|add\nUnduh laporan|download\nFilter|filter_list\nMuat ulang|refresh"),
+            LST(["Konfirmasi 6 pembayaran", "Balas 3 pertanyaan pelanggan", "Cetak 12 label pengiriman"]),
+            BAR("pagination", pages=8, current=2),
+        ]}],
+    },
+    "pengaturan": {
+        "name": "Halaman pengaturan",
+        "category": "Aplikasi",
+        "desc": "Breadcrumb, tab pengaturan, isian akun, dan tombol simpan.",
+        "title": "Pengaturan Akun",
+        "theme": theme_of("#2563eb", "#ffffff", "#111827", width=620),
+        "pages": [{"name": "Akun", "elements": [
+            BAR("breadcrumb", items="Beranda\nAkun\nPengaturan"),
+            H("Pengaturan", 32),
+            BAR("tabbar", items="Akun\nNotifikasi\nPrivasi", active=1),
+            INP("Nama lengkap", "Nama sesuai KTP"),
+            INP("Email", "nama@contoh.com", "email"),
+            INP("Nomor telepon", "08xxxxxxxxxx", "tel"),
+            INP("Kata sandi baru", "Minimal 8 karakter", "password"),
+            BAR("statusbar", kind="info", title="Tips", text="Gunakan kata sandi yang berbeda dari akun lain."),
+            B("Simpan perubahan", "", "left"),
+        ]}],
+    },
+    "onboarding": {
+        "name": "Onboarding aplikasi",
+        "category": "Aplikasi",
+        "desc": "Tiga layar pengenalan dengan bar langkah di setiap halaman.",
+        "title": "Catatin",
+        "theme": theme_of("#f97316", "#fffaf5", "#431407", "Sans-serif modern", 420),
+        "pages": [
+            {"name": "Mulai", "elements": [
+                BAR("stepper", steps="Mulai\nProfil\nSelesai", current=1),
+                IMG("onboard1", "Ilustrasi catatan", 20, 600, 420),
+                H("Catat apa saja, di mana saja", 30, "center"),
+                P("Simpan ide, daftar belanja, dan tugas dalam satu tempat yang rapi.", "center"),
+                B("Lanjut", "#", "center"),
+            ]},
+            {"name": "Profil", "elements": [
+                BAR("stepper", steps="Mulai\nProfil\nSelesai", current=2),
+                H("Kenalan dulu", 30, "center"),
+                INP("Nama panggilan", "Mau dipanggil apa?"),
+                INP("Email", "nama@contoh.com", "email"),
+                B("Lanjut", "#", "center"),
+            ]},
+            {"name": "Selesai", "elements": [
+                BAR("stepper", steps="Mulai\nProfil\nSelesai", current=3),
+                IMG("onboard3", "Ilustrasi selesai", 20, 600, 420),
+                H("Semua siap", 30, "center"),
+                P("Buat catatan pertamamu sekarang.", "center"),
+                B("Mulai mencatat", "#", "center"),
+            ]},
+        ],
+    },
+    "detail_produk": {
+        "name": "Detail produk",
+        "category": "Toko dan kuliner",
+        "desc": "Foto produk, rating bintang, spesifikasi, dan bar harga yang menempel di bawah.",
+        "title": "Tas Anyaman Lombok",
+        "theme": theme_of("#b45309", "#fffbeb", "#451a03", "Serif klasik", 640),
+        "pages": [{"name": "Produk", "elements": [
+            BAR("breadcrumb", items="Beranda\nTas\nTas Anyaman Lombok"),
+            IMG("bag", "Tas anyaman", 16, 800, 560),
+            H("Tas Anyaman Lombok", 32),
+            BAR("ratingbar", label="Ulasan pembeli", value=4.5, count="(212 ulasan)"),
+            P("Dianyam tangan oleh pengrajin Lombok dari serat pandan, ringan dan kuat untuk dipakai sehari-hari."),
+            LST(["Bahan: pandan dan kulit sintetis", "Ukuran: 32 x 24 x 12 cm", "Berat: 480 gram", "Warna: cokelat alami"]),
+            CARD("Garansi pengrajin", "Jahitan lepas dalam 60 hari kami perbaiki gratis."),
+            BAR("pricebar", price="Rp 189.000", caption="Gratis ongkir Jawa dan Bali", button="Beli sekarang", link="#"),
+        ]}],
+    },
+    "checkout": {
+        "name": "Keranjang dan checkout",
+        "category": "Toko dan kuliner",
+        "desc": "Langkah pembayaran, isian alamat, kode promo, dan ringkasan harga.",
+        "title": "Checkout",
+        "theme": theme_of("#16a34a", "#ffffff", "#14532d", width=620),
+        "pages": [{"name": "Alamat", "elements": [
+            BAR("breadcrumb", items="Keranjang\nCheckout"),
+            BAR("stepper", steps="Keranjang\nAlamat\nPembayaran\nSelesai", current=2),
+            H("Alamat pengiriman", 28),
+            INP("Nama penerima", "Nama lengkap"),
+            INP("Alamat", "Jalan, nomor, kecamatan"),
+            INP("Nomor telepon", "08xxxxxxxxxx", "tel"),
+            BAR("statusbar", kind="success", title="Promo terpasang", text="Potongan Rp 15.000 untuk pesanan pertama."),
+            CARD("Ringkasan pesanan", "2 barang, ongkir Rp 12.000, potongan Rp 15.000."),
+            BAR("pricebar", price="Rp 246.000", caption="Total yang dibayar", button="Lanjut bayar", link="#"),
+        ]}],
+    },
+    "galeri_foto": {
+        "name": "Galeri foto",
+        "category": "Konten",
+        "desc": "Pencarian, filter kategori, dua galeri, paginasi, dan tombol unggah melayang.",
+        "title": "Galeri Nusantara",
+        "theme": theme_of("#e11d48", "#fff1f2", "#4c0519", width=860),
+        "pages": [{"name": "Galeri", "elements": [
+            H("Galeri Nusantara", 34),
+            BAR("searchbar", placeholder="Cari foto atau fotografer", button="Cari"),
+            BAR("filterbar", items="Semua\nAlam\nKota\nPotret\nKuliner", active=1),
+            GAL(["g1", "g2", "g3", "g4", "g5", "g6"], 3, 12),
+            GAL(["g7", "g8", "g9"], 3, 12),
+            BAR("pagination", pages=12, current=1),
+            BAR("fab", icon="add_a_photo", text="Unggah", align="right"),
+        ]}],
+    },
+    "testimoni": {
+        "name": "Testimoni dan ulasan",
+        "category": "Konten",
+        "desc": "Rating rata-rata, statistik kepuasan, dan kutipan pelanggan.",
+        "title": "Kata Mereka",
+        "theme": theme_of("#d97706", "#ffffff", "#1f2937", width=680),
+        "pages": [{"name": "Ulasan", "elements": [
+            H("Kata pelanggan kami", 34, "center"),
+            BAR("ratingbar", label="Rata-rata dari semua ulasan", value=4.8, count="(1.204 ulasan)"),
+            BAR("statsbar", items="96%|Merekomendasikan\n4,8|Rating\n1,2 rb|Ulasan"),
+            CARD("Rina, Bandung", "Pesanan sampai lebih cepat dari perkiraan dan kemasannya rapi."),
+            CARD("Yoga, Medan", "Adminnya sabar menjawab semua pertanyaan sebelum saya membeli."),
+            CARD("Mega, Makassar", "Sudah tiga kali pesan ulang, kualitasnya konsisten."),
+            B("Tulis ulasanmu", "#", "center"),
+            FOOT("Ulasan diverifikasi dari pembelian nyata"),
+        ]}],
+    },
+    "pricing": {
+        "name": "Paket harga",
+        "category": "Bisnis",
+        "desc": "Tiga paket langganan, pilihan periode, dan pengumuman diskon tahunan.",
+        "title": "Paket Harga",
+        "theme": theme_of("#0ea5e9", "#f0f9ff", "#0c4a6e", width=700),
+        "pages": [{"name": "Harga", "elements": [
+            BAR("announcement", text="Hemat 20% dengan paket tahunan.", link_text="Pilih tahunan", link="#"),
+            H("Pilih paket yang pas", 36, "center"),
+            P("Mulai gratis, naik paket kapan saja tanpa kehilangan data.", "center"),
+            BAR("filterbar", items="Bulanan\nTahunan", active=1),
+            CARD("Starter, Rp 0", "Satu proyek, 100 MB penyimpanan, dukungan komunitas."),
+            CARD("Pro, Rp 99.000 per bulan", "Proyek tanpa batas, 20 GB penyimpanan, dukungan email."),
+            CARD("Bisnis, Rp 299.000 per bulan", "Lima anggota tim, 200 GB penyimpanan, dukungan prioritas."),
+            LST(["Semua paket memakai enkripsi data", "Batalkan kapan saja", "Faktur pajak tersedia"]),
+            B("Mulai gratis", "#", "center"),
+        ]}],
+    },
+    "halaman_404": {
+        "name": "Halaman 404",
+        "category": "Utilitas",
+        "desc": "Pesan halaman tidak ditemukan dengan pencarian dan tombol kembali.",
+        "title": "Tidak ditemukan",
+        "theme": theme_of("#6366f1", "#ffffff", "#1e1b4b", width=560),
+        "pages": [{"name": "404", "elements": [
+            BAR("breadcrumb", items="Beranda\nTidak ditemukan"),
+            SPC(40),
+            H("404", 72, "center"),
+            H("Halaman tidak ditemukan", 26, "center"),
+            P("Alamat yang kamu buka mungkin salah ketik atau halamannya sudah dipindahkan. Coba cari dari sini.", "center"),
+            BAR("searchbar", placeholder="Cari halaman", button="Cari"),
+            B("Kembali ke beranda", "#", "center"),
+        ]}],
+    },
+    "newsletter": {
+        "name": "Langganan newsletter",
+        "category": "Konten",
+        "desc": "Formulir email, tautan sosial, dan bar persetujuan cookie.",
+        "title": "Surat Senin",
+        "theme": theme_of("#be185d", "#fdf2f8", "#500724", "Serif klasik", 560),
+        "pages": [{"name": "Langganan", "elements": [
+            BAR("announcement", text="Edisi terbaru terbit setiap Senin pagi.", link_text="Baca arsip", link="#"),
+            SPC(16),
+            H("Satu surel seminggu, isinya padat", 36, "center"),
+            P("Ringkasan kabar teknologi dan desain yang bisa dibaca dalam lima menit.", "center"),
+            INP("Alamat email", "nama@contoh.com", "email"),
+            B("Berlangganan", "#", "center"),
+            BAR("socialbar", items="Instagram|#|photo_camera\nThreads|#|forum\nRSS|#|rss_feed"),
+            BAR("cookiebar", text="Kami memakai cookie untuk mengukur jumlah pembaca.", accept="Terima", decline="Tolak"),
+            FOOT("Berhenti berlangganan kapan saja"),
+        ]}],
+    },
+    "donasi": {
+        "name": "Penggalangan donasi",
+        "category": "Sosial",
+        "desc": "Progres dana terkumpul, pilihan nominal, dan bar harga untuk donasi.",
+        "title": "Perpustakaan Desa",
+        "theme": theme_of("#dc2626", "#fff7ed", "#450a0a", width=640),
+        "pages": [{"name": "Donasi", "elements": [
+            IMG("library", "Anak-anak membaca buku", 16, 800, 440),
+            H("Bantu bangun perpustakaan desa", 32),
+            P("Dana dipakai untuk rak buku, 1.000 judul buku anak, dan honor pustakawan selama setahun."),
+            BAR("progressbar", label="Terkumpul Rp 38 juta dari Rp 50 juta", value=76),
+            BAR("statsbar", items="412|Donatur\n12|Hari tersisa\n76%|Tercapai"),
+            H("Pilih nominal", 22),
+            BAR("filterbar", items="Rp 25.000\nRp 50.000\nRp 100.000\nLainnya", active=2),
+            INP("Nama (boleh disamarkan)", "Hamba Allah"),
+            BAR("pricebar", price="Rp 50.000", caption="Donasi pilihanmu", button="Donasi sekarang", link="#"),
+        ]}],
+    },
+    "app_navbawah": {
+        "name": "Aplikasi mobile dengan navigasi bawah",
+        "category": "Aplikasi",
+        "desc": "Pencarian, kategori ikon, filter, kartu rekomendasi, dan navigasi bawah.",
+        "title": "Jajan Dekat",
+        "theme": theme_of("#ea580c", "#ffffff", "#431407", width=420),
+        "pages": [{"name": "Beranda", "elements": [
+            H("Mau jajan apa hari ini?", 26),
+            BAR("searchbar", placeholder="Cari makanan atau warung", button="Cari"),
+            BAR("categorybar", items="Nasi|rice_bowl\nMie|ramen_dining\nKopi|local_cafe\nKue|cake\nSemua|apps"),
+            BAR("filterbar", items="Terdekat\nTerlaris\nBuka 24 jam", active=1),
+            CARD("Warung Bu Tini", "Nasi pecel dan rempeyek, 350 m dari lokasimu."),
+            CARD("Kopi Sudut", "Kopi susu gula aren, buka sampai tengah malam."),
+            CARD("Mie Ayam Pak Joko", "Porsi besar, antrean cepat saat jam makan siang."),
+            BAR("bottomnav", items="Beranda|home\nJelajah|explore\nPesanan|receipt_long\nProfil|person", active=1),
+        ]}],
+    },
 }
 
 
@@ -916,6 +1677,124 @@ def apply_template():
         st.session_state.page_idx = start
         st.session_state.selected_id = None
     st.session_state.tpl_preview = False
+
+
+def preview_template(key):
+    if key in TEMPLATES:
+        st.session_state.tpl_choice = key
+        st.session_state.tpl_preview = True
+        st.session_state.view_mode = "Preview"
+
+
+def close_template_preview():
+    st.session_state.tpl_preview = False
+
+
+def use_template(key):
+    if key in TEMPLATES:
+        st.session_state.tpl_choice = key
+        apply_template()
+
+
+# Referensi gaya desain: palet, font, dan bentuk elemen siap pakai.
+DESIGN_REFS = {
+    "Minimalis": {
+        "desc": "Putih bersih, banyak ruang kosong, satu warna aksen tegas.",
+        "theme": theme_of("#111827", "#ffffff", "#111827", "Sans-serif modern", 700),
+        "shape": {"radius": 6, "border_width": 1, "border_color": "#e5e7eb", "shadow": "none"},
+        "surface": "transparent", "ink": "inherit",
+    },
+    "Glassmorphism": {
+        "desc": "Lapisan kaca tembus pandang dengan sudut lembut dan bayangan halus.",
+        "theme": theme_of("#7c3aed", "#e0e7ff", "#1e1b4b", "Humanis", 760),
+        "shape": {"radius": 22, "border_width": 1, "border_color": "#ffffff", "shadow": "0 8px 32px rgba(31,38,135,.2)"},
+        "surface": "#ffffff99", "ink": "inherit",
+    },
+    "Neo-brutalism": {
+        "desc": "Garis tebal, bayangan keras tanpa blur, warna mencolok.",
+        "theme": theme_of("#ff5c00", "#fff7e6", "#111111", "Monospace", 720),
+        "shape": {"radius": 0, "border_width": 3, "border_color": "#111111", "shadow": "6px 6px 0 #111111"},
+        "surface": "#ffffff", "ink": "#111111",
+    },
+    "Mode gelap": {
+        "desc": "Latar biru malam dengan aksen sian, nyaman untuk dibaca malam hari.",
+        "theme": theme_of("#22d3ee", "#0b1220", "#e5e7eb", "Sans-serif modern", 760),
+        "shape": {"radius": 14, "border_width": 1, "border_color": "#1f2a44", "shadow": "0 6px 18px rgba(0,0,0,.35)"},
+        "surface": "#111a2e", "ink": "#e5e7eb",
+    },
+    "Pastel": {
+        "desc": "Warna lembut, sudut sangat membulat, terasa ramah dan ceria.",
+        "theme": theme_of("#f472b6", "#fff1f5", "#4a2c3a", "Humanis", 680),
+        "shape": {"radius": 26, "border_width": 2, "border_color": "#fbcfe8", "shadow": "0 2px 8px rgba(0,0,0,.08)"},
+        "surface": "#ffffff", "ink": "inherit",
+    },
+    "Korporat": {
+        "desc": "Biru tegas dan sudut rapi, cocok untuk perusahaan dan layanan resmi.",
+        "theme": theme_of("#1d4ed8", "#f8fafc", "#0f172a", "Serif elegan", 820),
+        "shape": {"radius": 4, "border_width": 1, "border_color": "#cbd5e1", "shadow": "0 2px 8px rgba(0,0,0,.08)"},
+        "surface": "#ffffff", "ink": "inherit",
+    },
+}
+
+SHAPE_TYPES = {"card", "button", "image", "gallery", "input"} | set(BAR_SPECS)
+SURFACE_TYPES = {"card"} | (set(BAR_SPECS) - {"announcement", "fab", "progressbar", "stepper", "searchbar"})
+
+
+def apply_design_ref(name):
+    ref = DESIGN_REFS.get(name)
+    if not ref:
+        return
+    design = st.session_state.design
+    design["theme"].update(copy.deepcopy(ref["theme"]))
+    if st.session_state.get("ref_shape", True):
+        for page in design["pages"]:
+            for el in page["elements"]:
+                if el.get("type") not in SHAPE_TYPES:
+                    continue
+                style = ensure_element_style(el)
+                style.update(ref["shape"])
+                if el["type"] in SURFACE_TYPES:
+                    style["background"] = ref["surface"]
+                    style["color"] = ref["ink"]
+                # Hapus state widget lama supaya panel properti memakai nilai terbaru.
+                for k in [k for k in st.session_state.keys() if str(k).startswith(f"{el['id']}_")]:
+                    del st.session_state[k]
+
+
+def on_color(hex_color):
+    """Pilih teks gelap atau terang agar terbaca di atas warna utama."""
+    h = str(hex_color).strip().lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    try:
+        r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    except ValueError:
+        return "#ffffff"
+    lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    return "#111827" if lum > 0.62 else "#ffffff"
+
+
+def swatches_html(theme):
+    dots = "".join(
+        f'<span class="tpl-sw" style="background:{esc(theme[k])}"></span>' for k in ("primary", "bg", "text")
+    )
+    return f'<div class="tpl-sws">{dots}</div>'
+
+
+def ref_preview_html(ref):
+    th, sh = ref["theme"], ref["shape"]
+    font = FONTS.get(th["font"], FONTS["Sans-serif modern"])
+    surface = ref["surface"]
+    ink = ref["ink"] if ref["ink"] != "inherit" else th["text"]
+    border = f'{sh["border_width"]}px solid {sh["border_color"]}'
+    return (
+        f'<div class="ref-prev" style="background:{esc(th["bg"])};color:{esc(th["text"])};font-family:{esc(font)}">'
+        f'<div class="ref-card" style="background:{esc(surface)};color:{esc(ink)};border:{esc(border)};'
+        f'border-radius:{sh["radius"]}px;box-shadow:{esc(sh["shadow"])}"><b>Judul kartu</b>'
+        f'<span>Contoh teks isi singkat.</span></div>'
+        f'<span class="ref-btn" style="background:{esc(th["primary"])};border-radius:{sh["radius"]}px;'
+        f'color:{on_color(th["primary"])};border:{esc(border)};box-shadow:{esc(sh["shadow"])}">Tombol</span></div>'
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1033,6 +1912,8 @@ def render_element(el):
         return f'<div style="height:{num(el.get("height"), 24)}px;background:{esc(ensure_element_style(el).get("background", "transparent"))};border-radius:{max(0, int(ensure_element_style(el).get("radius", 8) or 0))}px;"></div>'
     if t == "footer":
         return f'<footer class="footer" style="{common}">{esc(el.get("text", ""))}</footer>'
+    if t in BAR_SPECS:
+        return render_bar(el)
     return ""
 
 
@@ -1095,9 +1976,11 @@ def build_html(design, highlight_id=None, active=0):
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(design["title"])}</title>
+{ICON_LINK}
 <style>
   :root {{
     --primary: {esc(theme["primary"])};
+    --on-primary: {on_color(theme["primary"])};
     --bg: {esc(theme["bg"])};
     --text: {esc(theme["text"])};
   }}
@@ -1125,7 +2008,7 @@ def build_html(design, highlight_id=None, active=0):
     cursor: pointer;
     font: inherit;
   }}
-  .nav-btn.active {{ background: var(--primary); color: #fff; }}
+  .nav-btn.active {{ background: var(--primary); color: var(--on-primary); }}
   .page > * {{ margin-top: 0; margin-bottom: 16px; }}
   h1, h3 {{ line-height: 1.2; }}
   img {{ max-width: 100%; height: auto; display: block; }}
@@ -1134,7 +2017,7 @@ def build_html(design, highlight_id=None, active=0):
   .btn {{
     display: inline-block;
     background: var(--primary);
-    color: #fff;
+    color: var(--on-primary);
     border: 0;
     padding: 10px 20px;
     border-radius: 8px;
@@ -1186,7 +2069,7 @@ def build_html(design, highlight_id=None, active=0):
     border-top: 1px solid rgba(128,128,128,.35);
   }}
   .empty {{ opacity: .5; font-style: italic; }}
-{highlight_css}</style>
+{BAR_CSS}{highlight_css}</style>
 </head>
 <body>
 <main class="app">
@@ -1253,6 +2136,8 @@ def describe_element(el, number):
         detail = "garis horizontal tipis"
     elif t == "footer":
         detail = f'teks "{el.get("text", "")}", rata tengah'
+    elif t in BAR_SPECS:
+        detail = describe_bar(el)
     else:
         detail = f'tinggi {el.get("height")}px'
     return f"   {number}. {label}: {detail}"
@@ -1286,6 +2171,7 @@ def build_prompt(design, target="HTML/CSS/JavaScript satu file"):
         lines.append("- Sediakan navigasi antar halaman di bagian atas tanpa memuat ulang browser.")
     lines += [
         "- Tampilan harus responsif sampai ukuran layar ponsel.",
+        "- Nama ikon pada spesifikasi mengacu ke Material Symbols (Google); pakai ikon yang sama.",
         "- Gunakan HTML semantik dan pastikan fokus keyboard terlihat jelas.",
         "- Jangan menambahkan elemen, teks, atau fitur di luar spesifikasi ini.",
         "- Berikan hasil akhir berupa kode lengkap yang bisa langsung dijalankan.",
@@ -1300,17 +2186,25 @@ DND_HTML = r'''<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
 <style>
+  .mi { font-family: 'Material Symbols Rounded'; font-weight: 400; font-style: normal; font-size: 18px;
+    line-height: 1; display: inline-block; width: 1em; overflow: hidden; white-space: nowrap;
+    vertical-align: middle; font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
   :root { --fg: #31333f; --bg2: #f0f2f6; --accent: #ff4b4b; --line: rgba(128,128,128,.35); }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: transparent; color: var(--fg);
     font-family: "Source Sans Pro", system-ui, sans-serif; font-size: 14px; }
   .title { font-weight: 600; margin: 4px 0 2px; }
   .hint { opacity: .65; font-size: 12px; margin: 0 0 8px; }
-  #palette { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
-  .chip { border: 1px solid var(--line); background: var(--bg2); border-radius: 8px;
-    padding: 5px 9px; cursor: grab; user-select: none; font-size: 13px; }
-  .chip:hover { border-color: var(--accent); }
+  #palette { margin-bottom: 14px; }
+  #palette details { margin-bottom: 4px; border-bottom: 1px solid var(--line); }
+  #palette summary { cursor: pointer; font-weight: 600; font-size: 13px; padding: 6px 0; user-select: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 0 10px; }
+  .chip { border: 1px solid var(--line); background: var(--bg2); border-radius: 10px;
+    padding: 5px 10px 5px 7px; cursor: grab; user-select: none; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 5px; transition: border-color .12s, transform .12s; }
+  .chip:hover { border-color: var(--accent); transform: translateY(-1px); }
   #list { list-style: none; margin: 0; padding: 6px 6px 14px; min-height: 64px;
     border: 1px dashed var(--line); border-radius: 8px; }
   #list:empty::before { content: "Seret komponen ke sini"; display: block;
@@ -1342,6 +2236,11 @@ DND_HTML = r'''<!DOCTYPE html>
 <script>
 (function () {
   var items = [], palette = [], selected = null, drag = null;
+  var openGroups = { "Dasar": true };
+  try { var sv = sessionStorage.getItem("uib_groups"); if (sv) openGroups = JSON.parse(sv); } catch (e) {}
+  function icon(name) {
+    var s = document.createElement("span"); s.className = "mi"; s.textContent = name; return s;
+  }
   var listEl = document.getElementById("list");
   var palEl = document.getElementById("palette");
 
@@ -1379,21 +2278,44 @@ DND_HTML = r'''<!DOCTYPE html>
 
   function render() {
     palEl.textContent = "";
+    var groups = {}, order = [];
     palette.forEach(function (p) {
-      var c = document.createElement("div");
-      c.className = "chip";
-      c.draggable = true;
-      c.textContent = p.icon + " " + p.label;
-      c.addEventListener("dragstart", function (e) {
-        drag = { kind: "new", type: p.type };
-        e.dataTransfer.setData("text/plain", "new:" + p.type);
-        e.dataTransfer.effectAllowed = "copy";
+      var g = p.group || "Lainnya";
+      if (!groups[g]) { groups[g] = []; order.push(g); }
+      groups[g].push(p);
+    });
+    order.forEach(function (g) {
+      var d = document.createElement("details");
+      d.open = !!openGroups[g];
+      var sm = document.createElement("summary");
+      sm.textContent = g + " (" + groups[g].length + ")";
+      d.appendChild(sm);
+      var wrap = document.createElement("div");
+      wrap.className = "chips";
+      groups[g].forEach(function (p) {
+        var c = document.createElement("div");
+        c.className = "chip";
+        c.draggable = true;
+        c.appendChild(icon(p.icon));
+        c.appendChild(document.createTextNode(p.label));
+        c.addEventListener("dragstart", function (e) {
+          drag = { kind: "new", type: p.type };
+          e.dataTransfer.setData("text/plain", "new:" + p.type);
+          e.dataTransfer.effectAllowed = "copy";
+        });
+        c.addEventListener("dragend", function () { drag = null; clearInd(); });
+        c.addEventListener("click", function () {
+          send({ action: "insert", type: p.type, index: items.length });
+        });
+        wrap.appendChild(c);
       });
-      c.addEventListener("dragend", function () { drag = null; clearInd(); });
-      c.addEventListener("click", function () {
-        send({ action: "insert", type: p.type, index: items.length });
+      d.appendChild(wrap);
+      d.addEventListener("toggle", function () {
+        openGroups[g] = d.open;
+        try { sessionStorage.setItem("uib_groups", JSON.stringify(openGroups)); } catch (e) {}
+        fit();
       });
-      palEl.appendChild(c);
+      palEl.appendChild(d);
     });
 
     listEl.textContent = "";
@@ -1407,12 +2329,13 @@ DND_HTML = r'''<!DOCTYPE html>
       grip.textContent = "\u283F";
       var lbl = document.createElement("span");
       lbl.className = "lbl";
-      lbl.textContent = (i + 1) + ". " + it.icon + " " + it.label;
+      lbl.appendChild(icon(it.icon));
+      lbl.appendChild(document.createTextNode(" " + (i + 1) + ". " + it.label));
       var del = document.createElement("button");
       del.className = "del";
       del.type = "button";
       del.title = "Hapus";
-      del.textContent = "\u2715";
+      del.appendChild(icon("close"));
       del.addEventListener("click", function (e) {
         e.stopPropagation();
         send({ action: "delete", target: it.id });
@@ -1564,7 +2487,7 @@ def align_radio(el, key):
 def edit_visual_properties(el, key):
     """Panel gaya umum untuk setiap elemen."""
     style = ensure_element_style(el)
-    with st.expander("🎨 Tampilan & Bentuk", expanded=False):
+    with st.expander(":material/palette: Tampilan & Bentuk", expanded=False):
         c1, c2 = st.columns(2)
         style["background"] = c1.color_picker(
             "Warna latar", style.get("background", "#ffffff") if style.get("background") != "transparent" else "#ffffff",
@@ -1658,6 +2581,8 @@ def edit_properties(el, index):
         el["height"] = st.slider("Tinggi (px)", 4, 200, int(el["height"]), key=f"{key}_h")
     elif t == "footer":
         el["text"] = st.text_input("Teks footer", el["text"], key=f"{key}_text")
+    elif t in BAR_SPECS:
+        edit_bar_fields(el, key)
     else:
         st.caption("Elemen ini tidak punya pengaturan.")
 
@@ -1665,13 +2590,13 @@ def edit_properties(el, index):
     st.divider()
     total = len(current_page()["elements"])
     m1, m2 = st.columns(2)
-    m1.button("⬆️ Naikkan", key=f"{key}_mvup", on_click=move_element, args=(index, -1),
+    m1.button("Naikkan", icon=":material/arrow_upward:", key=f"{key}_mvup", on_click=move_element, args=(index, -1),
               disabled=index == 0, use_container_width=True)
-    m2.button("⬇️ Turunkan", key=f"{key}_mvdn", on_click=move_element, args=(index, 1),
+    m2.button("Turunkan", icon=":material/arrow_downward:", key=f"{key}_mvdn", on_click=move_element, args=(index, 1),
               disabled=index >= total - 1, use_container_width=True)
     c1, c2 = st.columns(2)
-    c1.button("📄 Gandakan", key=f"{key}_dup", on_click=duplicate_element, args=(index,), use_container_width=True)
-    c2.button("🗑️ Hapus", key=f"{key}_del", on_click=delete_element, args=(index,), use_container_width=True)
+    c1.button("Gandakan", icon=":material/content_copy:", key=f"{key}_dup", on_click=duplicate_element, args=(index,), use_container_width=True)
+    c2.button("Hapus", icon=":material/delete:", key=f"{key}_del", on_click=delete_element, args=(index,), use_container_width=True)
 
 
 # ---------------------------------------------------------------------------
@@ -1680,14 +2605,59 @@ def edit_properties(el, index):
 init_state()
 design = st.session_state.design
 
-st.markdown(
-    "<style>.block-container{padding-top:1.2rem;padding-bottom:0.5rem}"
-    "h5{margin-bottom:0.2rem}</style>",
-    unsafe_allow_html=True,
-)
-st.markdown("### 🧩 UI Builder")
+APP_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+#MainMenu, footer, header[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"],
+[data-testid="stStatusWidget"], [data-testid="stAppDeployButton"], [data-testid="stMainMenu"],
+.stAppDeployButton, .stDeployButton, [data-testid="stSidebarCollapsedControl"] {
+  display: none !important; visibility: hidden !important; height: 0 !important; }
+.stApp { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  background: radial-gradient(900px 420px at 8% -8%, rgba(99,102,241,.16), transparent 62%),
+              radial-gradient(800px 380px at 100% 0%, rgba(236,72,153,.12), transparent 60%); }
+.stApp button, .stApp input, .stApp textarea, .stApp [data-baseweb="select"] { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
+.block-container { padding-top: 1.1rem !important; padding-bottom: 1rem !important; max-width: 1680px; }
+h5 { margin-bottom: .2rem; font-weight: 700; }
+.st-key-hero { background: linear-gradient(115deg, #3730a3 0%, #6d28d9 50%, #be185d 115%); border-radius: 20px;
+  padding: 18px 26px !important; box-shadow: 0 14px 34px rgba(79,70,229,.32); }
+.st-key-hero, .st-key-hero * { color: #fff !important; }
+.st-key-hero h2 { margin: 0 !important; padding: 0 !important; font-weight: 700; letter-spacing: -.01em; }
+.st-key-hero [data-testid="stCaptionContainer"] { opacity: .88; }
+.st-key-hero [data-testid="stColumn"]:last-child { text-align: right; }
+.st-key-projbar { border-radius: 16px !important; border: 1px solid rgba(128,128,128,.22) !important; background: rgba(128,128,128,.045); }
+.st-key-panel_left, .st-key-panel_right { border-radius: 18px !important; border: 1px solid rgba(128,128,128,.22) !important;
+  background: rgba(128,128,128,.045); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+.stButton > button, .stDownloadButton > button { border-radius: 10px; font-weight: 600;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+.stButton > button:hover, .stDownloadButton > button:hover { transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(99,102,241,.22); border-color: #6366f1; }
+[data-testid="stBaseButton-primary"] { background: linear-gradient(120deg, #6366f1, #8b5cf6) !important; border: 0 !important; color: #fff !important; }
+.stTabs [data-baseweb="tab"] { font-weight: 600; }
+.stTabs [data-baseweb="tab-highlight"] { background-color: #6366f1 !important; height: 3px; border-radius: 3px; }
+.stTabs [aria-selected="true"] { color: #6366f1 !important; }
+[data-testid="stExpander"] { border-radius: 14px; border: 1px solid rgba(128,128,128,.25); }
+.tpl-sws { display: flex; gap: 4px; margin: 2px 0 4px; }
+.tpl-sw { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(128,128,128,.45); }
+.ref-prev { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px;
+  border: 1px solid rgba(128,128,128,.25); margin-bottom: 6px; }
+.ref-card { flex: 1; padding: 8px 10px; display: flex; flex-direction: column; font-size: 13px; }
+.ref-card span { font-size: 12px; opacity: .8; }
+.ref-btn { padding: 8px 12px; font-size: 13px; font-weight: 600; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(128,128,128,.35); border-radius: 8px; }
+"""
+st.markdown(f"<style>{APP_CSS}</style>", unsafe_allow_html=True)
 
 autosave_project()
+
+with st.container(key="hero"):
+    hc1, hc2 = st.columns([3, 1.4], vertical_alignment="center")
+    hc1.markdown("## :material/dashboard_customize: UI Builder")
+    hc1.caption("Susun tampilan aplikasi, lihat hasilnya langsung, lalu ambil kode HTML atau prompt master AI.")
+    hc2.markdown(
+        f":material/widgets: {len(ELEMENT_LABELS)} komponen &nbsp;·&nbsp; "
+        f":material/dashboard: {len(TEMPLATES)} template &nbsp;·&nbsp; :material/palette: {len(DESIGN_REFS)} gaya"
+    )
+
 project_list = list_projects()
 project_ids = [p["id"] for p in project_list]
 project_names = {p["id"]: p["name"] for p in project_list}
@@ -1697,7 +2667,7 @@ if st.session_state.get("project_id") not in project_ids:
 if st.session_state.get("project_selector_topbar") not in project_ids:
     st.session_state.project_selector_topbar = st.session_state.project_id
 
-with st.container(border=True):
+with st.container(border=True, key="projbar"):
     p1, p2, p3, p4 = st.columns([3.1, 1.15, 1.15, 1.15])
     p1.selectbox(
         "Proyek",
@@ -1707,10 +2677,10 @@ with st.container(border=True):
         on_change=switch_project,
         label_visibility="collapsed",
     )
-    p2.button("➕ Baru", key="new_project_btn", on_click=new_project, use_container_width=True)
-    p3.button("✏️ Nama", key="rename_project_btn", on_click=rename_project, use_container_width=True)
+    p2.button("Baru", icon=":material/add:", key="new_project_btn", on_click=new_project, use_container_width=True)
+    p3.button("Nama", icon=":material/edit:", key="rename_project_btn", on_click=rename_project, use_container_width=True)
     p4.button(
-        "🗑️ Hapus", key="delete_project_btn", on_click=delete_project,
+        "Hapus", icon=":material/delete:", key="delete_project_btn", on_click=delete_project,
         disabled=len(project_ids) <= 1, use_container_width=True,
     )
     r1, r2 = st.columns([3.1, 4.45])
@@ -1719,19 +2689,26 @@ with st.container(border=True):
         label_visibility="collapsed", placeholder="Nama proyek",
     )
     status = {
-        "saved": "🟢 Tersimpan otomatis",
-        "saving": "🟡 Menyimpan...",
-        "error": "🔴 Gagal menyimpan",
-    }.get(st.session_state.get("autosave_status"), "🟢 Tersimpan otomatis")
+        "saved": ":material/cloud_done: Tersimpan otomatis",
+        "saving": ":material/sync: Menyimpan...",
+        "error": ":material/error: Gagal menyimpan",
+    }.get(st.session_state.get("autosave_status"), ":material/cloud_done: Tersimpan otomatis")
     saved_at = st.session_state.get("last_saved_at")
     r2.caption(f"{status}" + (f" · {saved_at}" if saved_at else ""))
+
+with st.expander(":material/lightbulb: Cara pakai singkat", expanded=False):
+    g1, g2, g3, g4 = st.columns(4)
+    g1.markdown(":material/add_circle: **1. Tambah komponen**\n\nSeret dari daftar Komponen ke Susunan, atau klik untuk menambah di akhir.")
+    g2.markdown(":material/tune: **2. Atur properti**\n\nKlik satu baris di Susunan, lalu ubah teks, ikon, dan gaya di tab Properti.")
+    g3.markdown(":material/dashboard: **3. Mulai dari template**\n\nTab Template berisi galeri siap pakai dan referensi gaya desain.")
+    g4.markdown(":material/code: **4. Ambil hasilnya**\n\nPilih Kode HTML atau Prompt AI di atas preview, lalu unduh.")
 
 col_left, col_center, col_right = st.columns([1.15, 2.6, 1.35], gap="medium")
 
 # ---------------------------- PANEL KIRI ----------------------------------
 with col_left:
-    with st.container(height=PANEL_HEIGHT, border=True):
-        st.markdown("##### 📄 Halaman")
+    with st.container(height=PANEL_HEIGHT, border=True, key="panel_left"):
+        st.markdown("##### :material/description: Halaman")
         pages = design["pages"]
         st.selectbox(
             "Halaman aktif",
@@ -1745,11 +2722,11 @@ with col_left:
         page.setdefault("id", uuid.uuid4().hex[:8])
         page["name"] = st.text_input("Nama halaman", page["name"], key=f"pname_{page['id']}")
         b1, b2 = st.columns(2)
-        b1.button("➕ Tambah", on_click=add_page, use_container_width=True)
-        b2.button("🗑️ Hapus", on_click=delete_page, disabled=len(pages) <= 1, use_container_width=True)
+        b1.button("Tambah", icon=":material/add:", on_click=add_page, use_container_width=True)
+        b2.button("Hapus", icon=":material/delete:", on_click=delete_page, disabled=len(pages) <= 1, use_container_width=True)
 
         dnd_on = st.checkbox(
-            "🖱️ Mode seret dan lepas",
+            ":material/drag_indicator: Mode seret dan lepas",
             value=True,
             key="dnd_mode",
             help="Matikan jika komponen seret-lepas tidak tampil di perangkatmu. Daftar tombol akan dipakai sebagai gantinya.",
@@ -1775,13 +2752,13 @@ with col_left:
                     {
                         "id": el["id"],
                         "label": ELEMENT_LABELS[el["type"]] + summary_of(el),
-                        "icon": ICONS.get(el["type"], "▫️"),
+                        "icon": ICONS.get(el["type"], "widgets"),
                     }
                     for el in elements
                 ],
                 palette=[
-                    {"type": t, "label": label, "icon": ICONS.get(t, "▫️")}
-                    for t, label in ELEMENT_LABELS.items()
+                    {"type": t, "label": ELEMENT_LABELS[t], "icon": ICONS.get(t, "widgets"), "group": ELEMENT_GROUP[t]}
+                    for t in sorted(ELEMENT_LABELS, key=lambda x: GROUP_ORDER.index(ELEMENT_GROUP[x]))
                 ],
                 selected=st.session_state.selected_id,
                 key=f"dnd_list_{dnd_signature}",
@@ -1790,18 +2767,19 @@ with col_left:
             if handle_dnd_event(event):
                 st.rerun()
         else:
-            st.markdown("##### ➕ Komponen")
+            st.markdown("##### :material/add_circle: Komponen")
             grid = st.columns(2)
             for n, t in enumerate(ELEMENT_LABELS):
                 grid[n % 2].button(
                     ELEMENT_LABELS[t],
+                    icon=f":material/{ICONS.get(t, 'widgets')}:",
                     key=f"add_{t}",
                     on_click=add_element,
                     args=(t,),
                     use_container_width=True,
                 )
 
-            st.markdown("##### 🌳 Susunan")
+            st.markdown("##### :material/account_tree: Susunan")
             if not elements:
                 st.caption("Belum ada elemen. Klik salah satu komponen di atas.")
             for i, el in enumerate(elements):
@@ -1809,6 +2787,7 @@ with col_left:
                 r1, r2, r3 = st.columns([6, 1.4, 1.4], gap="small")
                 r1.button(
                     f"{i + 1}. {ELEMENT_LABELS[el['type']]}{summary_of(el)}",
+                    icon=f":material/{ICONS.get(el['type'], 'widgets')}:",
                     key=f"sel_{el['id']}",
                     on_click=select_element,
                     args=(el["id"],),
@@ -1823,9 +2802,15 @@ with col_left:
 # ---------------------------- PANEL TENGAH --------------------------------
 with col_center:
     top1, top2 = st.columns([2.2, 1])
+    VIEW_LABELS = {
+        "Preview": ":material/visibility: Preview",
+        "Kode HTML": ":material/code: Kode HTML",
+        "Prompt Master AI": ":material/auto_awesome: Prompt AI",
+    }
     view = top1.radio(
         "Tampilan",
-        ["Preview", "Kode HTML", "Prompt Master AI"],
+        list(VIEW_LABELS),
+        format_func=lambda v: VIEW_LABELS[v],
         horizontal=True,
         label_visibility="collapsed",
         key="view_mode",
@@ -1857,34 +2842,85 @@ with col_center:
 
 # ---------------------------- PANEL KANAN ---------------------------------
 with col_right:
-    with st.container(height=PANEL_HEIGHT, border=True):
-        tab_prop, tab_tpl, tab_theme, tab_file = st.tabs(["Properti", "Template", "Tema", "Berkas"])
+    with st.container(height=PANEL_HEIGHT, border=True, key="panel_right"):
+        tab_prop, tab_tpl, tab_theme, tab_file = st.tabs([
+            ":material/tune: Properti", ":material/dashboard: Template",
+            ":material/palette: Tema", ":material/folder: Berkas",
+        ])
 
         with tab_prop:
             idx, sel = selected_element()
             if sel is None:
-                st.info("Klik salah satu baris di daftar Susunan (panel kiri) untuk mengubah propertinya.")
+                st.info("Belum ada elemen terpilih. Klik satu baris di Susunan (panel kiri) untuk mengubah propertinya.", icon=":material/touch_app:")
             else:
                 edit_properties(sel, idx)
 
         with tab_tpl:
-            cats = ["Semua"] + sorted({t["category"] for t in TEMPLATES.values()})
-            cat = st.selectbox("Kategori", cats, key="tpl_cat")
-            keys = [k for k, t in TEMPLATES.items() if cat == "Semua" or t["category"] == cat]
-            choice = st.selectbox(
-                "Template", keys, format_func=lambda k: TEMPLATES[k]["name"], key="tpl_choice"
-            )
-            tpl = TEMPLATES[choice]
-            n_el = sum(len(p["elements"]) for p in tpl["pages"])
-            st.caption(f"{tpl['desc']} ({len(tpl['pages'])} halaman, {n_el} elemen)")
-            st.checkbox("Pratinjau di panel tengah", key="tpl_preview")
-            st.radio(
-                "Cara menerapkan",
-                ["Ganti seluruh desain", "Tambahkan sebagai halaman baru"],
-                key="tpl_mode",
-            )
-            st.button("✨ Pakai template", on_click=apply_template, use_container_width=True)
-            st.caption("Mode ganti akan menimpa desain yang sedang dikerjakan. Unduh dulu lewat tab Berkas bila perlu.")
+            sub_gal, sub_ref = st.tabs([":material/grid_view: Galeri", ":material/palette: Referensi gaya"])
+
+            with sub_gal:
+                st.text_input("Cari template", key="tpl_q", placeholder="Ketik nama, kategori, atau kata kunci")
+                cats = ["Semua"] + sorted({t["category"] for t in TEMPLATES.values()})
+                st.selectbox("Kategori", cats, key="tpl_cat")
+                st.radio(
+                    "Cara menerapkan",
+                    ["Ganti seluruh desain", "Tambahkan sebagai halaman baru"],
+                    key="tpl_mode",
+                )
+                if st.session_state.get("tpl_preview") and st.session_state.get("tpl_choice") in TEMPLATES:
+                    st.info(
+                        f"Pratinjau aktif: {TEMPLATES[st.session_state.tpl_choice]['name']}",
+                        icon=":material/visibility:",
+                    )
+                    st.button(
+                        "Tutup pratinjau", icon=":material/close:",
+                        on_click=close_template_preview, use_container_width=True,
+                    )
+                q = str(st.session_state.get("tpl_q", "")).strip().lower()
+                cat = st.session_state.get("tpl_cat", "Semua")
+                shown = [
+                    k for k, t in TEMPLATES.items()
+                    if (cat == "Semua" or t["category"] == cat)
+                    and (not q or q in t["name"].lower() or q in t["category"].lower() or q in t["desc"].lower())
+                ]
+                st.caption(f"{len(shown)} dari {len(TEMPLATES)} template")
+                if not shown:
+                    st.info("Tidak ada template yang cocok. Ubah kata kunci atau kategori.", icon=":material/search_off:")
+                for k in shown:
+                    tpl = TEMPLATES[k]
+                    n_el = sum(len(p["elements"]) for p in tpl["pages"])
+                    with st.container(border=True):
+                        st.markdown(f"**{tpl['name']}**")
+                        st.markdown(swatches_html(tpl["theme"]), unsafe_allow_html=True)
+                        st.caption(f"{tpl['category']} · {len(tpl['pages'])} halaman · {n_el} elemen")
+                        st.caption(tpl["desc"])
+                        b1, b2 = st.columns(2)
+                        b1.button(
+                            "Pratinjau", key=f"tpv_{k}", icon=":material/visibility:",
+                            on_click=preview_template, args=(k,), use_container_width=True,
+                        )
+                        b2.button(
+                            "Pakai", key=f"tus_{k}", icon=":material/check:", type="primary",
+                            on_click=use_template, args=(k,), use_container_width=True,
+                        )
+                st.caption("Mode ganti akan menimpa desain yang sedang dikerjakan. Unduh dulu lewat tab Berkas bila perlu.")
+
+            with sub_ref:
+                st.caption("Pilih gaya visual sebagai titik awal. Warna, font, dan lebar langsung diterapkan ke tema desainmu.")
+                st.checkbox(
+                    "Terapkan juga ke bentuk elemen (sudut, garis, bayangan)",
+                    value=True, key="ref_shape",
+                    help="Matikan bila kamu hanya ingin mengganti warna, font, dan lebar tema.",
+                )
+                for name, ref in DESIGN_REFS.items():
+                    with st.container(border=True):
+                        st.markdown(f"**{name}**")
+                        st.markdown(ref_preview_html(ref), unsafe_allow_html=True)
+                        st.caption(ref["desc"])
+                        st.button(
+                            "Terapkan gaya", key=f"ref_{name}", icon=":material/palette:",
+                            on_click=apply_design_ref, args=(name,), use_container_width=True,
+                        )
 
         with tab_theme:
             design["title"] = st.text_input("Nama aplikasi", design["title"])
@@ -1900,14 +2936,15 @@ with col_right:
 
         with tab_file:
             st.download_button(
-                "💾 Unduh desain (.json)",
+                "Unduh desain (.json)",
                 json.dumps(design, ensure_ascii=False, indent=2),
                 file_name="desain.json",
                 mime="application/json",
+                icon=":material/download:",
                 use_container_width=True,
             )
             uploaded = st.file_uploader("Muat desain (.json)", type=["json"])
-            if uploaded is not None and st.button("📂 Terapkan file", use_container_width=True):
+            if uploaded is not None and st.button("Terapkan file", icon=":material/upload_file:", use_container_width=True):
                 try:
                     data = json.loads(uploaded.getvalue().decode("utf-8"))
                     if valid_design(data):
@@ -1917,7 +2954,7 @@ with col_right:
                         st.error("Struktur file tidak sesuai format desain.")
                 except (json.JSONDecodeError, UnicodeDecodeError):
                     st.error("File bukan JSON yang valid.")
-            st.button("♻️ Reset desain", on_click=reset_design, use_container_width=True)
+            st.button("Reset desain", icon=":material/restart_alt:", on_click=reset_design, use_container_width=True)
 
 # ---------------------- RENDER OUTPUT TERBARU ------------------------------
 # Diletakkan setelah panel kanan supaya preview selalu memakai design yang sudah
@@ -1943,14 +2980,15 @@ with center_output.container():
 
     elif view == "Kode HTML":
         output = build_html(st.session_state.design)
-        st.download_button("⬇️ Unduh index.html", output, file_name="index.html", mime="text/html")
+        st.download_button("Unduh index.html", output, file_name="index.html", mime="text/html", icon=":material/download:")
         with st.container(height=PANEL_HEIGHT - 110, border=True):
             st.code(output, language="html")
 
     else:
         output = build_prompt(st.session_state.design, target)
         st.download_button(
-            "⬇️ Unduh prompt_master.txt", output, file_name="prompt_master.txt", mime="text/plain"
+            "Unduh prompt_master.txt", output, file_name="prompt_master.txt", mime="text/plain",
+            icon=":material/download:",
         )
         with st.container(height=PANEL_HEIGHT - 160, border=True):
             st.code(output, language="markdown")
