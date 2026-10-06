@@ -2735,11 +2735,11 @@ NETWORK_CSS = """
   content: ""; position: absolute; inset: 0;
   background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,.58) 100%);
 }
-.network-bg svg { width: 100%; height: 100%; opacity: .72; }
-.mesh path { fill: none; stroke: rgba(203,213,225,.16); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.mesh-b path { stroke: rgba(226,232,240,.11); stroke-width: 1.2; }
+.network-bg svg { width: 100%; height: 100%; opacity: .95; display:block; }
+.mesh path { fill: none; stroke: rgba(226,232,240,.28); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.mesh-b path { stroke: rgba(226,232,240,.20); stroke-width: 1.2; }
 .flow path {
-  fill: none; stroke: rgba(241,245,249,.8); stroke-width: 2; stroke-linecap: round;
+  fill: none; stroke: rgba(255,255,255,.95); stroke-width: 2; stroke-linecap: round;
   stroke-dasharray: 2 210; stroke-dashoffset: 0;
   animation: networkFlow 7s linear infinite; filter: url(#netGlow);
   vector-effect: non-scaling-stroke;
@@ -2759,10 +2759,22 @@ NETWORK_CSS = """
 .sparkles circle:nth-child(2n) { animation-delay: -2.4s; animation-duration: 6.5s; }
 @keyframes sparkle { 0%,100% { opacity: .12; transform: scale(.7); } 50% { opacity: .65; transform: scale(1.15); } }
 
-/* Pastikan seluruh UI berada di atas background animasi. */
-[data-testid="stAppViewContainer"], [data-testid="stHeader"], .block-container { position: relative; z-index: 1; }
-.stApp { background: transparent !important; }
-.block-container { background: transparent !important; }
+/* Page-level layering: background must be visible, while UI remains clickable. */
+html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > .main, section.main, .block-container {
+  background: transparent !important;
+}
+.network-bg {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 50 !important;
+  pointer-events: none !important;
+}
+[data-testid="stAppViewContainer"] { position: relative !important; z-index: 60 !important; }
+.block-container { position: relative !important; z-index: 70 !important; }
+.st-key-hero, .st-key-projbar, .st-key-panel_left, .st-key-panel_right, [data-testid="stExpander"], [data-testid="stVerticalBlockBorderWrapper"] {
+  position: relative; z-index: 80;
+}
+[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stSidebar"] { z-index: 200 !important; }
 .st-key-hero { background: rgba(10,12,18,.76) !important; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 18px 55px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.04); backdrop-filter: blur(16px); }
 .st-key-projbar, .st-key-panel_left, .st-key-panel_right { background: rgba(9,12,18,.78) !important; border-color: rgba(255,255,255,.10) !important; box-shadow: 0 18px 45px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.035); backdrop-filter: blur(15px); }
 [data-testid="stExpander"] { background: rgba(8,11,16,.68); border-color: rgba(255,255,255,.10); backdrop-filter: blur(12px); }
@@ -2774,7 +2786,13 @@ NETWORK_CSS = """
   .flow path, .nodes circle, .sparkles circle { animation: none !important; }
 }
 """
-st.markdown(f"<style>{NETWORK_CSS}</style>{NETWORK_BG}", unsafe_allow_html=True)
+
+# Render the network as a real page-level fixed layer. Streamlit can place the
+# main app inside a stacking context, so the background gets a high layer and
+# every interactive UI surface is explicitly placed above it.
+st.markdown(f"<style>{NETWORK_CSS}</style>", unsafe_allow_html=True)
+st.markdown(NETWORK_BG, unsafe_allow_html=True)
+
 
 autosave_project()
 
