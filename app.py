@@ -2351,6 +2351,7 @@ PALETTE_HTML = r'''
   function post(type,data){window.parent.postMessage(Object.assign({isStreamlitMessage:true,type:type},data),"*");}
   function send(payload){payload.id=Date.now()+"-"+Math.random().toString(36).slice(2);
     post("streamlit:setComponentValue",{value:payload,dataType:"json"});}
+  function fit(){post("streamlit:setFrameHeight",{height:96});}
   function icon(name){var s=document.createElement("span");s.className="mi";s.textContent=name;return s;}
   function render(){
     root.textContent="";var last="";
@@ -2979,8 +2980,10 @@ with col_right:
             st.button("Reset desain", icon=":material/restart_alt:", on_click=reset_design, use_container_width=True)
 
 # ---------------------------- DOCK KOMPONEN --------------------------------
-# Semua komponen berada di bagian bawah sehingga tidak lagi menghabiskan tinggi
-# panel kiri. Klik chip -> masuk ke Susunan dan langsung terpilih.
+# Semua komponen berada di bagian bawah halaman, di luar tiga kolom editor.
+# Klik chip -> masuk ke Susunan dan langsung terpilih. Drag -> lepaskan ke panel Susunan.
+st.markdown("### :material/widgets: Komponen")
+st.caption("Klik untuk menambahkan. Seret komponen ke panel Susunan di kanan untuk menentukan posisinya.")
 palette_component = get_palette_component()
 palette_event = palette_component(
     palette=[
