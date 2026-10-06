@@ -22,6 +22,7 @@ from actions import (  # noqa: E402
     delete_page, load_design, preview_template, reset_design, use_template,
 )
 from bar_specs import GROUP_ORDER  # noqa: E402
+from bar_specs_addons import COMPONENT_BAR_SPECS  # noqa: E402
 from config import (  # noqa: E402
     DEVICES, ELEMENT_GROUP, ELEMENT_LABELS, FONTS, ICONS, PANEL_HEIGHT,
 )
@@ -100,14 +101,15 @@ with st.expander(":material/lightbulb: Cara pakai singkat", expanded=False):
     g3.markdown(":material/dashboard: **3. Mulai dari template**\n\nTab Template berisi galeri siap pakai dan referensi gaya desain.")
     g4.markdown(":material/code: **4. Ambil hasilnya**\n\nPilih Kode HTML atau Prompt AI di atas preview, lalu unduh.")
 
-# Preview di tengah dibuat paling lebar supaya hasil desain terlihat lega.
-col_left, col_center, col_right = st.columns([0.85, 4.05, 1.25], gap="medium")
+# Sisakan ruang ekstra untuk panel halaman dan editor, tanpa mengorbankan area preview.
+col_left, col_center, col_right = st.columns([1.1, 3.5, 1.75], gap="medium")
 
 # ---------------------------- PANEL KIRI ----------------------------------
-# Panel kiri hanya untuk mengelola halaman. Daftar komponen ada di dock bawah.
+# Panel kiri menjadi ruang ringkas untuk navigasi halaman dan status pilihan.
 with col_left:
     with st.container(height=PANEL_HEIGHT, border=True, key="panel_left"):
-        st.markdown("##### :material/description: Halaman")
+        st.markdown("#### :material/web_asset: Halaman")
+        st.caption("Kelola halaman dan lihat isi yang sedang dikerjakan.")
         pages = design["pages"]
         st.selectbox(
             "Halaman aktif",
@@ -115,40 +117,41 @@ with col_left:
             format_func=lambda i: pages[i]["name"] if i < len(pages) else "",
             key="page_idx",
             on_change=clear_selection,
-            label_visibility="collapsed",
         )
         page = current_page()
         page.setdefault("id", uuid.uuid4().hex[:8])
         page["name"] = st.text_input("Nama halaman", page["name"], key=f"pname_{page['id']}")
-        b1, b2 = st.columns(2)
-        b1.button("Tambah", icon=":material/add:", on_click=add_page, use_container_width=True)
+        b1, b2 = st.columns(2, gap="small")
+        b1.button("Tambah", icon=":material/add:", on_click=add_page, use_container_width=True,
+                  help="Buat halaman baru dan langsung buka halaman tersebut.")
         b2.button(
             "Hapus", icon=":material/delete:", on_click=delete_page,
-            disabled=len(pages) <= 1, use_container_width=True
+            disabled=len(pages) <= 1, use_container_width=True,
+            help="Hapus halaman aktif. Minimal satu halaman harus tersisa.",
         )
 
         st.divider()
-        st.markdown("##### :material/layers: Ringkasan")
-        st.caption(f"{len(page['elements'])} komponen di halaman ini")
-        if st.session_state.get("selected_id"):
-            _, _sel = selected_element()
-            if _sel:
-                st.success(
-                    f"Terpilih: {ELEMENT_LABELS[_sel['type']]}",
-                    icon=":material/touch_app:",
-                )
-        else:
-            st.info(
-                "Pilih komponen dari Preview atau panel Susunan di kanan.",
-                icon=":material/touch_app:",
-            )
+        st.markdown("##### :material/insights: Ringkasan")
+        metric_col1, metric_col2 = st.columns(2, gap="small")
+        metric_col1.metric("Komponen", len(page["elements"]))
+        active_page_number = min(st.session_state.page_idx, len(pages) - 1) + 1
+        metric_col2.metric("Halaman", f"{active_page_number}/{len(pages)}")
 
-        st.divider()
-        st.markdown("##### :material/lightbulb: Alur baru")
-        st.caption("1. Pilih komponen di dock bawah.")
-        st.caption("2. Komponen masuk ke Susunan di kanan.")
-        st.caption("3. Klik komponen di Preview atau Susunan.")
-        st.caption("4. Edit langsung di panel Properti.")
+        _, selected = selected_element()
+        with st.container(border=True):
+            if selected:
+                st.markdown(f"**:material/touch_app: {ELEMENT_LABELS[selected['type']]} dipilih**")
+                st.caption("Detail dapat diubah dari tab **Editor → Properti** di panel kanan.")
+            else:
+                st.markdown("**Belum ada komponen dipilih**")
+                st.caption("Pilih komponen pada preview atau daftar Susunan di panel kanan.")
+
+        with st.expander(":material/lightbulb: Panduan singkat", expanded=False):
+            st.markdown(
+                "1. Tambahkan komponen dari katalog bawah.\n"
+                "2. Atur urutan pada **Susunan** di panel kanan.\n"
+                "3. Pilih elemen, lalu sesuaikan teks dan tampilannya di **Properti**."
+            )
 
 # ---------------------------- PANEL TENGAH --------------------------------
 with col_center:
@@ -191,6 +194,8 @@ with col_center:
 # Panel kanan: Susunan + Properti, Template, Tema, Berkas.
 with col_right:
     with st.container(height=PANEL_HEIGHT, border=True, key="panel_right"):
+        st.markdown("#### :material/tune: Ruang kerja")
+        st.caption("Susun elemen, pilih pola desain, lalu sesuaikan tampilannya.")
         tab_editor, tab_tpl, tab_theme, tab_file = st.tabs([
             ":material/edit_note: Editor",
             ":material/dashboard: Template",
@@ -242,12 +247,12 @@ with col_right:
                 edit_properties(sel, idx)
 
         with tab_tpl:
-            sub_gal, sub_ref = st.tabs([":material/grid_view: Galeri", ":material/palette: Referensi gaya"])
+            sub_gal, sub_ref = st.tabs([":material/grid_view: Galeri", ":material/palette: Gaya"])
             with sub_gal:
-                st.text_input("Cari template", key="tpl_q", placeholder="Ketik nama, kategori, atau kata kunci")
+                st.text_input("Cari template", key="tpl_q", placeholder="Nama, kategori, atau kata kunci")
                 cats = ["Semua"] + sorted({t["category"] for t in TEMPLATES.values()})
                 st.selectbox("Kategori", cats, key="tpl_cat")
-                st.radio(
+                st.selectbox(
                     "Cara menerapkan",
                     ["Ganti seluruh desain", "Tambahkan sebagai halaman baru"],
                     key="tpl_mode",
@@ -268,44 +273,56 @@ with col_right:
                     if (cat == "Semua" or t["category"] == cat)
                     and (not q or q in t["name"].lower() or q in t["category"].lower() or q in t["desc"].lower())
                 ]
-                st.caption(f"{len(shown)} dari {len(TEMPLATES)} template")
+                gallery_count = sum(t["category"] == "Galeri" for t in TEMPLATES.values())
+                st.caption(f"{len(shown)} dari {len(TEMPLATES)} template · {gallery_count} template galeri")
                 if not shown:
                     st.info("Tidak ada template yang cocok. Ubah kata kunci atau kategori.", icon=":material/search_off:")
-                for k in shown:
-                    tpl = TEMPLATES[k]
-                    n_el = sum(len(p["elements"]) for p in tpl["pages"])
-                    with st.container(border=True):
-                        st.markdown(f"**{tpl['name']}**")
-                        st.markdown(swatches_html(tpl["theme"]), unsafe_allow_html=True)
-                        st.caption(f"{tpl['category']} · {len(tpl['pages'])} halaman · {n_el} elemen")
-                        st.caption(tpl["desc"])
-                        b1, b2 = st.columns(2)
-                        b1.button(
-                            "Pratinjau", key=f"tpv_{k}", icon=":material/visibility:",
-                            on_click=preview_template, args=(k,), use_container_width=True,
-                        )
-                        b2.button(
-                            "Pakai", key=f"tus_{k}", icon=":material/check:", type="primary",
-                            on_click=use_template, args=(k,), use_container_width=True,
-                        )
-                st.caption("Mode ganti akan menimpa desain yang sedang dikerjakan. Unduh dulu lewat tab Berkas bila perlu.")
+                else:
+                    with st.container(height=340, border=False):
+                        for k in shown:
+                            tpl = TEMPLATES[k]
+                            n_el = sum(len(p["elements"]) for p in tpl["pages"])
+                            with st.expander(f"{tpl['name']} · {tpl['category']}", expanded=False):
+                                st.markdown(swatches_html(tpl["theme"]), unsafe_allow_html=True)
+                                st.caption(f"{len(tpl['pages'])} halaman · {n_el} elemen")
+                                st.caption(tpl["desc"])
+                                b1, b2 = st.columns(2)
+                                b1.button(
+                                    "Pratinjau", key=f"tpv_{k}", icon=":material/visibility:",
+                                    on_click=preview_template, args=(k,), use_container_width=True,
+                                )
+                                b2.button(
+                                    "Pakai", key=f"tus_{k}", icon=":material/check:", type="primary",
+                                    on_click=use_template, args=(k,), use_container_width=True,
+                                )
+                st.caption("Mode ganti menimpa desain saat ini. Unduh desain terlebih dahulu bila ingin menyimpan salinan.")
 
             with sub_ref:
-                st.caption("Pilih gaya visual sebagai titik awal. Warna, font, dan lebar langsung diterapkan ke tema desainmu.")
+                st.caption("Pilih preset warna, font, dan bentuk. Gaya diterapkan ke tema serta elemen yang ada.")
                 st.checkbox(
                     "Terapkan juga ke bentuk elemen (sudut, garis, bayangan)",
                     value=True, key="ref_shape",
-                    help="Matikan bila kamu hanya ingin mengganti warna, font, dan lebar tema.",
+                    help="Matikan bila hanya ingin mengganti warna, font, dan lebar tema.",
                 )
-                for name, ref in DESIGN_REFS.items():
-                    with st.container(border=True):
-                        st.markdown(f"**{name}**")
-                        st.markdown(ref_preview_html(ref), unsafe_allow_html=True)
-                        st.caption(ref["desc"])
-                        st.button(
-                            "Terapkan gaya", key=f"ref_{name}", icon=":material/palette:",
-                            on_click=apply_design_ref, args=(name,), use_container_width=True,
-                        )
+                st.text_input("Cari gaya", key="ref_q", placeholder="Ketik nama atau karakter gaya…")
+                ref_q = str(st.session_state.get("ref_q", "")).strip().lower()
+                shown_refs = [
+                    (name, ref) for name, ref in DESIGN_REFS.items()
+                    if not ref_q or ref_q in name.lower() or ref_q in ref["desc"].lower()
+                ]
+                st.caption(f"{len(shown_refs)} dari {len(DESIGN_REFS)} referensi gaya")
+                if not shown_refs:
+                    st.info("Tidak ada gaya yang cocok dengan pencarian.", icon=":material/search_off:")
+                else:
+                    with st.container(height=360, border=False):
+                        for name, ref in shown_refs:
+                            with st.expander(name, expanded=False):
+                                st.markdown(ref_preview_html(ref), unsafe_allow_html=True)
+                                st.caption(ref["desc"])
+                                st.button(
+                                    "Terapkan gaya", key=f"ref_{name}", icon=":material/palette:",
+                                    on_click=apply_design_ref, args=(name,), use_container_width=True,
+                                )
 
         with tab_theme:
             design["title"] = st.text_input("Nama aplikasi", design["title"])
@@ -344,8 +361,8 @@ with col_right:
 # ---------------------------- DOCK KOMPONEN --------------------------------
 # Dibuat dengan widget Streamlit biasa (bukan iframe) agar selalu terlihat
 # dan tetap bekerja di Streamlit Cloud.
-st.markdown("### :material/widgets: Komponen")
-st.caption("Klik komponen untuk menambahkan. Komponen baru akan langsung dipilih dan dapat diedit di panel kanan.")
+st.markdown("### :material/widgets: Pustaka komponen")
+st.caption("Pilih atau cari komponen untuk menambahkannya ke halaman. Komponen baru akan langsung dipilih dan siap diedit.")
 
 f1, f2, f3 = st.columns([1.1, 1.6, 3])
 f1.selectbox("Grup", ["Semua grup"] + GROUP_ORDER, key="dock_group")
@@ -358,30 +375,32 @@ component_types = [
     and (not dock_q or dock_q in ELEMENT_LABELS[t].lower())
 ]
 f3.caption(
-    f"{len(component_types)} dari {len(ELEMENT_LABELS)} komponen tampil"
+    f"{len(component_types)} dari {len(ELEMENT_LABELS)} komponen tampil · "
+    f"{len(COMPONENT_BAR_SPECS)} komponen tambahan baru"
     + (f" · grup {dock_group}" if dock_group != "Semua grup" else "")
     + (f" · kata kunci “{st.session_state.get('dock_q', '')}”" if dock_q else "")
 )
 
-if not component_types:
-    st.info("Tidak ada komponen yang cocok. Ubah grup atau kata kunci.", icon=":material/search_off:")
-
-COMPONENTS_PER_ROW = 5
-for row_start in range(0, len(component_types), COMPONENTS_PER_ROW):
-    row_types = component_types[row_start:row_start + COMPONENTS_PER_ROW]
-    cols = st.columns(COMPONENTS_PER_ROW, gap="small")
-    for col, t in zip(cols, row_types):
-        label = ELEMENT_LABELS[t]
-        icon_name = ICONS.get(t, "widgets")
-        col.button(
-            label,
-            icon=f":material/{icon_name}:",
-            key=f"bottom_component_{t}",
-            use_container_width=True,
-            on_click=add_element,
-            args=(t,),
-            help=f"Tambah {label} ke halaman ({ELEMENT_GROUP[t]})",
-        )
+with st.container(height=540, border=True, key="component_library"):
+    if not component_types:
+        st.info("Tidak ada komponen yang cocok. Ubah grup atau kata kunci.", icon=":material/search_off:")
+    else:
+        COMPONENTS_PER_ROW = 6
+        for row_start in range(0, len(component_types), COMPONENTS_PER_ROW):
+            row_types = component_types[row_start:row_start + COMPONENTS_PER_ROW]
+            cols = st.columns(COMPONENTS_PER_ROW, gap="small")
+            for col, t in zip(cols, row_types):
+                label = ELEMENT_LABELS[t]
+                icon_name = ICONS.get(t, "widgets")
+                col.button(
+                    label,
+                    icon=f":material/{icon_name}:",
+                    key=f"bottom_component_{t}",
+                    use_container_width=True,
+                    on_click=add_element,
+                    args=(t,),
+                    help=f"Tambah {label} ke halaman ({ELEMENT_GROUP[t]})",
+                )
 
 st.divider()
 

@@ -39,12 +39,12 @@
 3. Lanjut #3 (component editing)
 4. Terakhir #4 (30 template gaya)
 
-## Status terbaru (Oktober 2026)
+## Status terbaru (6 Oktober 2026)
 
-- **#3 Edit komponen**: selesai — panel Properti mengedit semua field `BAR_SPECS` (120 bar) otomatis.
-- **#4 Template gaya**: selesai — `design_refs.py` kini berisi **26 referensi gaya** (6 lama + 20 baru).
-- **Paket Pro**: 50 komponen bar baru di `bar_specs_pro.py` / `bars_pro.py` / `css_pro.py`
-  (grup baru: Konten, Keuangan, Peta & Lokasi) — total 120 komponen bar.
-- **Template**: 20 template galeri baru + “Galeri 50 komponen Pro” — total 54 template.
-- **Preview tengah diperluas**: kolom tengah `[0.85, 4.05, 1.25]`, bingkai preview 780 px,
-  lebar maksimum kontainer editor 1920 px.
+- **#1 Navigasi halaman** dan **#2 tautan internal/eksternal**: sudah tersedia.
+- **#3 Edit komponen**: selesai — seluruh field `BAR_SPECS` diedit otomatis di panel Properti.
+- **#4 Referensi gaya**: 30 preset tambahan sudah ditambahkan; total kini **56 gaya** (26 yang sudah ada + 30 baru).
+- **Galeri template**: 30 template galeri tambahan sudah ditambahkan; total **50 template Galeri** dan **84 template keseluruhan**.
+- **Komponen**: 50 komponen tambahan baru sudah ditambahkan tanpa mengganti katalog lama; kini ada **170 komponen bar + 12 elemen dasar = 182 komponen**.
+- **Kerapian editor**: panel kiri dan kanan diperluas, ringkasan halaman diperjelas, serta daftar template/gaya/komponen dibuat lebih mudah dicari dan dipindai.
+- **Preview** tetap memakai bingkai 780 px; area kontainer editor maksimal 1920 px.

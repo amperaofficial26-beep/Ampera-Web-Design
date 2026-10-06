@@ -496,6 +496,11 @@ from css_pro import BAR_CSS_PRO  # noqa: E402
 
 BAR_CSS = BAR_CSS + BAR_CSS_PRO
 
+# CSS untuk 50 komponen katalog tambahan.
+from css_addons import BAR_CSS_ADDONS  # noqa: E402
+
+BAR_CSS = BAR_CSS + BAR_CSS_ADDONS
+
 # CSS untuk tampilan aplikasi editor Streamlit itu sendiri.
 APP_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -517,7 +522,19 @@ h5 { margin-bottom: .2rem; font-weight: 700; }
 .st-key-hero [data-testid="stColumn"]:last-child { text-align: right; }
 .st-key-projbar { border-radius: 16px !important; border: 1px solid rgba(128,128,128,.22) !important; background: rgba(128,128,128,.045); }
 .st-key-panel_left, .st-key-panel_right { border-radius: 18px !important; border: 1px solid rgba(128,128,128,.22) !important;
-  background: rgba(128,128,128,.045); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+  background: rgba(255,255,255,.68); box-shadow: 0 10px 28px rgba(15,23,42,.065); }
+.st-key-panel_left { background: linear-gradient(180deg, rgba(238,242,255,.8), rgba(255,255,255,.82)); }
+.st-key-panel_right { background: linear-gradient(180deg, rgba(250,250,255,.9), rgba(255,255,255,.82)); }
+.st-key-panel_left h4, .st-key-panel_right h4 { margin: 0 0 .15rem; letter-spacing: -.02em; }
+.st-key-panel_left [data-testid="stMetric"] { padding: .55rem .6rem; border: 1px solid rgba(99,102,241,.14);
+  border-radius: 12px; background: rgba(255,255,255,.72); }
+.st-key-panel_left [data-testid="stMetricLabel"] { font-size: .72rem; }
+.st-key-panel_left [data-testid="stMetricValue"] { font-size: 1.25rem; }
+.st-key-panel_left [data-testid="stVerticalBlockBorderWrapper"] { border-radius: 13px; background: rgba(255,255,255,.62); }
+.st-key-panel_right [data-baseweb="tab-list"] { gap: .15rem; }
+.st-key-panel_right [data-baseweb="tab"] { padding: .5rem .55rem; font-size: .78rem; }
+.st-key-panel_right [data-testid="stExpander"] { margin-bottom: .35rem; border-radius: 11px; background: rgba(255,255,255,.62); }
+.st-key-component_library { border-radius: 16px !important; background: rgba(255,255,255,.55); }
 .stButton > button, .stDownloadButton > button { border-radius: 10px; font-weight: 600;
   transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
 .stButton > button:hover, .stDownloadButton > button:hover { transform: translateY(-1px);

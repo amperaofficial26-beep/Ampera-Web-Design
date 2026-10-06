@@ -1321,6 +1321,11 @@ TEMPLATES = {
     },
 }
 
+# Template galeri tambahan berada di modul terpisah agar katalog utama tetap mudah dirawat.
+from gallery_templates import GALLERY_TEMPLATES  # noqa: E402
+
+TEMPLATES.update(GALLERY_TEMPLATES)
+
 
 def template_design(key):
     """Buat salinan desain dari template, lengkap dengan id baru."""

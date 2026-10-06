@@ -177,6 +177,11 @@ DESIGN_REFS = {
     },
 }
 
+# Tambahkan koleksi gaya baru, sambil mempertahankan semua referensi sebelumnya.
+from design_refs_extra import EXTRA_DESIGN_REFS  # noqa: E402
+
+DESIGN_REFS.update(EXTRA_DESIGN_REFS)
+
 SHAPE_TYPES = {"card", "button", "image", "gallery", "input"} | set(BAR_SPECS)
 SURFACE_TYPES = {"card"} | (set(BAR_SPECS) - {"announcement", "fab", "progressbar", "stepper", "searchbar"})
 
