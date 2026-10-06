@@ -464,3 +464,14 @@ BAR_SPECS = {
                    ("active", "Metode aktif (urutan)", "int", (1, 6)), ("note", "Keterangan bawah", "text")],
     },
 }
+
+# 50 komponen paket "Pro" (navigasi, aksi, informasi, data, formulir, media, sosial,
+# toko, keuangan, peta & lokasi, konten). Spesifikasinya ada di bar_specs_pro.py,
+# render HTML-nya di bars_pro.py, CSS-nya di css_pro.py.
+from bar_specs_pro import PRO_BAR_SPECS, PRO_GROUP_ORDER  # noqa: E402
+
+BAR_SPECS.update(PRO_BAR_SPECS)
+for _group in PRO_GROUP_ORDER:
+    if _group not in GROUP_ORDER:
+        GROUP_ORDER.append(_group)
+del _group

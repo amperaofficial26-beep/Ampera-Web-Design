@@ -190,7 +190,7 @@ iframe{width:100%;height:100%;border:0;background:#fff;border-radius:12px;box-sh
   function post(type,data){window.parent.postMessage(Object.assign({isStreamlitMessage:true,type:type},data),"*");}
   function send(payload){payload.id=Date.now()+"-"+Math.random().toString(36).slice(2);
     post("streamlit:setComponentValue",{value:payload,dataType:"json"});}
-  function fit(){post("streamlit:setFrameHeight",{height:620});}
+  function fit(){post("streamlit:setFrameHeight",{height:780});}
   window.addEventListener("message",function(e){
     var d=e.data;if(!d)return;
     if(d.type==="streamlit:render"){

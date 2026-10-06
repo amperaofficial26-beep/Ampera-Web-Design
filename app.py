@@ -100,7 +100,8 @@ with st.expander(":material/lightbulb: Cara pakai singkat", expanded=False):
     g3.markdown(":material/dashboard: **3. Mulai dari template**\n\nTab Template berisi galeri siap pakai dan referensi gaya desain.")
     g4.markdown(":material/code: **4. Ambil hasilnya**\n\nPilih Kode HTML atau Prompt AI di atas preview, lalu unduh.")
 
-col_left, col_center, col_right = st.columns([1.05, 2.7, 1.45], gap="medium")
+# Preview di tengah dibuat paling lebar supaya hasil desain terlihat lega.
+col_left, col_center, col_right = st.columns([0.85, 4.05, 1.25], gap="medium")
 
 # ---------------------------- PANEL KIRI ----------------------------------
 # Panel kiri hanya untuk mengelola halaman. Daftar komponen ada di dock bawah.
