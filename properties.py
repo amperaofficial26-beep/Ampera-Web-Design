@@ -3,10 +3,10 @@ import re
 
 import streamlit as st
 
-from actions import delete_element, duplicate_element, move_element
+from actions import delete_element, duplicate_element, move_element, open_page_target
 from bar_specs import BAR_SPECS
 from bars import edit_bar_fields
-from config import (ALIGNS, ELEMENT_LABELS, INPUT_KINDS, SHADOW_OPTIONS, WIDTH_OPTIONS)
+from config import (ALIGNS, ELEMENT_LABELS, INPUT_KINDS, LINK_TYPES, SHADOW_OPTIONS, WIDTH_OPTIONS)
 from projects import current_page
 from styles import ensure_element_style
 from utils import align_of, input_kind
@@ -90,7 +90,32 @@ def edit_properties(el, index):
         el["align"] = align_radio(el, f"{key}_align")
     elif t == "button":
         el["text"] = st.text_input("Label", el["text"], key=f"{key}_text")
-        el["link"] = st.text_input("Tautan (opsional)", el["link"], key=f"{key}_link")
+        link_type_keys = list(LINK_TYPES)
+        current_link_type = el.get("link_type", "url") if el.get("link_type", "url") in link_type_keys else "url"
+        el["link_type"] = st.selectbox(
+            "Jenis target",
+            link_type_keys,
+            index=link_type_keys.index(current_link_type),
+            format_func=lambda v: LINK_TYPES[v],
+            key=f"{key}_link_type",
+        )
+        if el["link_type"] == "page":
+            el["link_target"] = st.text_input(
+                "Nama halaman target",
+                str(el.get("link_target", "")).strip(),
+                key=f"{key}_link_target",
+                placeholder="Contoh: Akun",
+                help="Saat ditutup, tombol akan membuka halaman ini. Jika belum ada, halaman akan dibuat otomatis.",
+            )
+            if st.button("Buat & buka halaman ini", key=f"{key}_go_page", use_container_width=True):
+                target_name = str(el.get("link_target", "")).strip()
+                if target_name:
+                    open_page_target(el)
+                    st.rerun()
+            st.caption("Contoh: ketik 'akun' lalu tombol akan membuka halaman Akun.")
+        else:
+            el["link"] = st.text_input("URL", el.get("link", ""), key=f"{key}_link")
+            el["link_target"] = ""
         el["align"] = align_radio(el, f"{key}_align")
     elif t == "image":
         el["url"] = st.text_input("URL gambar", el["url"], key=f"{key}_url")
