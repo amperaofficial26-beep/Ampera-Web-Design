@@ -2980,26 +2980,37 @@ with col_right:
             st.button("Reset desain", icon=":material/restart_alt:", on_click=reset_design, use_container_width=True)
 
 # ---------------------------- DOCK KOMPONEN --------------------------------
-# Semua komponen berada di bagian bawah halaman, di luar tiga kolom editor.
-# Klik chip -> masuk ke Susunan dan langsung terpilih. Drag -> lepaskan ke panel Susunan.
+# Daftar komponen dibuat langsung dengan widget Streamlit agar SELALU terlihat.
+# Tidak menggunakan iframe/custom component untuk palette; ini juga membuat tombol
+# tetap bekerja pada Streamlit Cloud dan tidak bergantung pada komunikasi JS.
 st.markdown("### :material/widgets: Komponen")
-st.caption("Klik untuk menambahkan. Seret komponen ke panel Susunan di kanan untuk menentukan posisinya.")
-palette_component = get_palette_component()
-palette_event = palette_component(
-    palette=[
-        {
-            "type": t,
-            "label": ELEMENT_LABELS[t],
-            "icon": ICONS.get(t, "widgets"),
-            "group": ELEMENT_GROUP[t],
-        }
-        for t in sorted(ELEMENT_LABELS, key=lambda x: (GROUP_ORDER.index(ELEMENT_GROUP[x]), ELEMENT_LABELS[x]))
-    ],
-    key="component_palette_bottom",
-    default=None,
+st.caption("Klik komponen untuk menambahkan. Komponen baru akan langsung dipilih dan dapat diedit di panel kanan.")
+
+# Kelompokkan komponen dalam beberapa baris horizontal.
+component_types = sorted(
+    ELEMENT_LABELS,
+    key=lambda x: (GROUP_ORDER.index(ELEMENT_GROUP[x]), ELEMENT_LABELS[x])
 )
-if handle_palette_event(palette_event):
-    st.rerun()
+
+# Buat baris-baris agar semua komponen terlihat tanpa panel kiri yang tinggi.
+COMPONENTS_PER_ROW = 5
+for row_start in range(0, len(component_types), COMPONENTS_PER_ROW):
+    row_types = component_types[row_start:row_start + COMPONENTS_PER_ROW]
+    cols = st.columns(COMPONENTS_PER_ROW, gap="small")
+    for col, t in zip(cols, row_types):
+        label = ELEMENT_LABELS[t]
+        icon_name = ICONS.get(t, "widgets")
+        col.button(
+            label,
+            icon=f":material/{icon_name}:",
+            key=f"bottom_component_{t}",
+            use_container_width=True,
+            on_click=add_element,
+            args=(t,),
+            help=f"Tambah {label} ke halaman",
+        )
+
+st.divider()
 
 # ---------------------- RENDER OUTPUT TERBARU ------------------------------
 with center_output.container():
