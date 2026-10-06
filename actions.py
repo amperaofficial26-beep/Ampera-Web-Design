@@ -21,6 +21,38 @@ def clear_selection():
     st.session_state.selected_id = None
 
 
+def normalize_page_name(name):
+    text = str(name or "").strip()
+    if not text:
+        return f"Halaman {len(st.session_state.design['pages']) + 1}"
+    return text
+
+
+def find_page_index_by_name(name):
+    raw = str(name or "").strip()
+    if not raw:
+        return None
+    lowered = raw.lower()
+    for idx, page in enumerate(st.session_state.design["pages"]):
+        if str(page.get("name", "")).strip().lower() == lowered:
+            return idx
+    return None
+
+
+def create_page_named(name=None):
+    pages = st.session_state.design["pages"]
+    desired = normalize_page_name(name)
+    match = find_page_index_by_name(desired)
+    if match is not None:
+        st.session_state.page_idx = match
+        st.session_state.selected_id = None
+        return match
+    pages.append({"id": uuid.uuid4().hex[:8], "name": desired, "elements": []})
+    st.session_state.page_idx = len(pages) - 1
+    st.session_state.selected_id = None
+    return st.session_state.page_idx
+
+
 def insert_element(el_type, index=None):
     el = {"id": uuid.uuid4().hex[:8], "type": el_type}
     el.update(copy.deepcopy(ELEMENT_DEFAULTS[el_type]))
@@ -69,9 +101,11 @@ def duplicate_element(index):
 # ---- Halaman dan desain ----------------------------------------------------
 def add_page():
     pages = st.session_state.design["pages"]
-    pages.append({"id": uuid.uuid4().hex[:8], "name": f"Halaman {len(pages) + 1}", "elements": []})
-    st.session_state.page_idx = len(pages) - 1
-    st.session_state.selected_id = None
+    name = f"Halaman {len(pages) + 1}"
+    if "page_name_new" in st.session_state and str(st.session_state.get("page_name_new", "")).strip():
+        name = str(st.session_state.page_name_new).strip()
+    create_page_named(name)
+    st.session_state.pop("page_name_new", None)
 
 
 def delete_page():
