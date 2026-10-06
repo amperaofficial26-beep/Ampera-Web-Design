@@ -1675,342 +1675,19 @@ def edit_properties(el, index):
 
 
 # ---------------------------------------------------------------------------
-# Tampilan — AOG Intelligence Workspace
+# Tampilan
 # ---------------------------------------------------------------------------
 init_state()
 design = st.session_state.design
 
-# Palet visual mengikuti referensi: navy gelap, panel transparan, border biru
-# lembut, aksen indigo/ungu, dan tipografi kecil/rapi.
 st.markdown(
-    """
-<style>
-:root {
-    --aog-bg: #070d1c;
-    --aog-panel: #0b1326;
-    --aog-panel-2: #101a31;
-    --aog-border: #1d2a49;
-    --aog-border-soft: rgba(73, 101, 160, .24);
-    --aog-text: #edf3ff;
-    --aog-muted: #8d9bb7;
-    --aog-accent: #5967e8;
-    --aog-accent-2: #7b61d9;
-    --aog-green: #16c79a;
-    --aog-danger: #e76a78;
-}
-
-.stApp {
-    background:
-        radial-gradient(circle at 82% 8%, rgba(73, 82, 190, .13), transparent 25%),
-        radial-gradient(circle at 15% 70%, rgba(37, 91, 160, .08), transparent 30%),
-        var(--aog-bg);
-    color: var(--aog-text);
-}
-
-[data-testid="stAppViewContainer"] {
-    background: transparent;
-}
-
-[data-testid="stHeader"] {
-    background: rgba(7, 13, 28, .86);
-}
-
-.block-container {
-    max-width: 1500px;
-    padding: 18px 18px 8px !important;
-}
-
-section.main > div {
-    background: transparent;
-}
-
-h1, h2, h3, h4, h5, h6, p, label, span, div {
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-                 "Segoe UI", sans-serif;
-}
-
-h5 {
-    margin: 0 0 .45rem !important;
-    color: #dce6fb !important;
-}
-
-/* ---------- Header ---------- */
-.aog-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    min-height: 58px;
-    margin-bottom: 10px;
-}
-.aog-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.aog-brand-icon {
-    width: 27px;
-    height: 27px;
-    border-radius: 8px;
-    display: grid;
-    place-items: center;
-    background: linear-gradient(145deg, #1b5cff, #6d56df);
-    box-shadow: 0 0 24px rgba(82, 92, 230, .25);
-    font-size: 14px;
-}
-.aog-kicker {
-    color: #93a4c5;
-    font-size: 10px;
-    margin-bottom: 1px;
-}
-.aog-title {
-    color: #f4f7ff;
-    font-weight: 750;
-    font-size: 19px;
-    line-height: 1.1;
-    letter-spacing: -.35px;
-}
-.aog-subtitle {
-    color: #7887a4;
-    font-size: 9.5px;
-    line-height: 1.35;
-    margin-top: 4px;
-    max-width: 420px;
-}
-.aog-promo {
-    min-width: 220px;
-    padding: 9px 13px;
-    border: 1px solid #27366a;
-    border-radius: 11px;
-    background:
-        radial-gradient(circle at 90% 10%, rgba(117, 78, 216, .42), transparent 35%),
-        linear-gradient(120deg, rgba(13, 28, 57, .95), rgba(28, 27, 73, .92));
-    color: #dfe6ff;
-    font-size: 9px;
-    text-align: left;
-}
-.aog-promo b { color: #ffffff; font-size: 9.5px; }
-
-/* ---------- Generic Streamlit controls ---------- */
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    border-color: var(--aog-border) !important;
-    background: linear-gradient(180deg, rgba(13, 23, 44, .96), rgba(8, 15, 31, .96)) !important;
-    border-radius: 8px !important;
-}
-
-div[data-testid="stVerticalBlockBorderWrapper"] > div {
-    border-radius: 8px !important;
-}
-
-div[data-baseweb="select"] > div {
-    background: #101a30 !important;
-    border-color: #243352 !important;
-    color: #dbe6fb !important;
-    border-radius: 7px !important;
-    min-height: 30px !important;
-}
-div[data-baseweb="select"] * {
-    color: #dbe6fb !important;
-}
-
-.stTextInput input, .stTextArea textarea {
-    background: #0d172c !important;
-    color: #eaf1ff !important;
-    border: 1px solid #223250 !important;
-    border-radius: 7px !important;
-    font-size: 11px !important;
-}
-.stTextInput input:focus, .stTextArea textarea:focus {
-    border-color: #5267d9 !important;
-    box-shadow: 0 0 0 1px rgba(82,103,217,.2) !important;
-}
-
-button[kind="secondary"], button[kind="primary"] {
-    border-radius: 7px !important;
-    min-height: 29px !important;
-    font-size: 10px !important;
-    font-weight: 600 !important;
-    border: 1px solid #243454 !important;
-    background: #101a30 !important;
-    color: #cbd7ee !important;
-    padding: 4px 10px !important;
-}
-button[kind="primary"] {
-    background: linear-gradient(135deg, #5268df, #6b58c9) !important;
-    border-color: #6477ea !important;
-    color: #fff !important;
-    box-shadow: 0 4px 14px rgba(72, 83, 191, .22);
-}
-button[kind="secondary"]:hover, button[kind="primary"]:hover {
-    border-color: #687bea !important;
-    color: #fff !important;
-}
-.stDownloadButton button {
-    border-radius: 7px !important;
-    min-height: 29px !important;
-    font-size: 10px !important;
-}
-
-[data-testid="stCaptionContainer"] {
-    color: #73829f !important;
-    font-size: 9px !important;
-}
-[data-testid="stMarkdownContainer"] p {
-    font-size: 10px;
-}
-
-/* ---------- Top project bar ---------- */
-.aog-projectbar {
-    border: 1px solid var(--aog-border);
-    background: rgba(10, 19, 37, .92);
-    border-radius: 8px;
-    padding: 6px;
-    margin-bottom: 9px;
-}
-.aog-project-status {
-    color: #8392ae;
-    font-size: 9px;
-    padding: 3px 2px 0 4px;
-}
-.aog-dot {
-    color: var(--aog-green);
-    font-size: 8px;
-}
-
-/* ---------- Main 3-column layout ---------- */
-[data-testid="stHorizontalBlock"] {
-    gap: 7px !important;
-}
-
-.aog-section-title {
-    color: #dce6fa;
-    font-size: 11px;
-    font-weight: 700;
-    margin: 2px 0 6px;
-}
-.aog-section-label {
-    color: #7586a7;
-    font-size: 9px;
-    font-weight: 600;
-    margin: 8px 0 4px;
-}
-
-/* ---------- Center controls ---------- */
-[data-testid="stRadio"] label {
-    font-size: 9px !important;
-    color: #9aabc9 !important;
-}
-[data-testid="stRadio"] > div {
-    gap: 2px !important;
-}
-[data-testid="stRadio"] [data-baseweb="radio"] {
-    background: #0e172b !important;
-    border: 1px solid #223250 !important;
-    padding: 5px 9px !important;
-    border-radius: 6px !important;
-}
-[data-testid="stRadio"] [data-baseweb="radio"] div {
-    color: #aab8d2 !important;
-}
-[data-testid="stRadio"] [aria-checked="true"] {
-    background: #505fd3 !important;
-    border-color: #5e70e3 !important;
-}
-[data-testid="stRadio"] [aria-checked="true"] div {
-    color: #fff !important;
-}
-
-/* ---------- Tabs ---------- */
-button[data-baseweb="tab"] {
-    color: #7888a7 !important;
-    font-size: 9px !important;
-    padding: 5px 8px !important;
-}
-button[data-baseweb="tab"][aria-selected="true"] {
-    color: #dfe7ff !important;
-}
-div[data-baseweb="tab-highlight"] {
-    background: #5969e4 !important;
-    height: 2px !important;
-}
-
-/* ---------- Checkboxes / sliders ---------- */
-[data-testid="stCheckbox"] label {
-    font-size: 9px !important;
-    color: #8999b6 !important;
-}
-[data-testid="stSlider"] label {
-    font-size: 9px !important;
-    color: #8999b6 !important;
-}
-
-/* ---------- Info box ---------- */
-div[data-testid="stAlert"] {
-    background: #12203a !important;
-    border: 1px solid #23375c !important;
-    color: #9eafd0 !important;
-    border-radius: 7px !important;
-    padding: 7px 9px !important;
-    font-size: 9px !important;
-}
-
-/* ---------- Iframe preview ---------- */
-iframe {
-    border: 1px solid #2a3b62 !important;
-    border-radius: 7px !important;
-    background: #f7f9ff !important;
-    box-shadow: 0 16px 45px rgba(0,0,0,.28);
-}
-
-/* ---------- Bottom status ---------- */
-.aog-footer {
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    color:#61718f;
-    font-size:8px;
-    padding:7px 2px 0;
-}
-.aog-footer .online { color:#14c795; }
-
-/* Reduce Streamlit's extra vertical whitespace */
-div[data-testid="stVerticalBlock"] {
-    gap: 5px;
-}
-div[data-testid="stElementContainer"] {
-    margin: 0 !important;
-}
-</style>
-""",
+    "<style>.block-container{padding-top:1.2rem;padding-bottom:0.5rem}"
+    "h5{margin-bottom:0.2rem}</style>",
     unsafe_allow_html=True,
 )
+st.markdown("### 🧩 UI Builder")
 
 autosave_project()
-
-# Header seperti referensi
-st.markdown(
-    """
-<div class="aog-header">
-  <div class="aog-brand">
-    <div class="aog-brand-icon">✦</div>
-    <div>
-      <div class="aog-kicker">Aplikasi AI</div>
-      <div class="aog-title">AOG Intelligence Workspace</div>
-      <div class="aog-subtitle">
-        Temukan ide, tingkatkan produktivitas, dan wujudkan kreativitasmu
-        dengan kekuatan AI dalam satu tempat.
-      </div>
-    </div>
-  </div>
-  <div class="aog-promo">
-    <b>⚡ &nbsp;Kreativitas tanpa batas,</b><br>
-    dengan AI yang tepat.
-  </div>
-</div>
-""",
-    unsafe_allow_html=True,
-)
-
 project_list = list_projects()
 project_ids = [p["id"] for p in project_list]
 project_names = {p["id"]: p["name"] for p in project_list}
@@ -2020,9 +1697,8 @@ if st.session_state.get("project_id") not in project_ids:
 if st.session_state.get("project_selector_topbar") not in project_ids:
     st.session_state.project_selector_topbar = st.session_state.project_id
 
-# Bar proyek: dropdown + aksi.
 with st.container(border=True):
-    p1, p2, p3, p4 = st.columns([3.6, 1.0, 1.0, 1.0], gap="small")
+    p1, p2, p3, p4 = st.columns([3.1, 1.15, 1.15, 1.15])
     p1.selectbox(
         "Proyek",
         project_ids,
@@ -2031,51 +1707,31 @@ with st.container(border=True):
         on_change=switch_project,
         label_visibility="collapsed",
     )
-    p2.button("＋ Baru", key="new_project_btn", on_click=new_project, use_container_width=True)
-    p3.button("✎ Nama", key="rename_project_btn", on_click=rename_project, use_container_width=True)
+    p2.button("➕ Baru", key="new_project_btn", on_click=new_project, use_container_width=True)
+    p3.button("✏️ Nama", key="rename_project_btn", on_click=rename_project, use_container_width=True)
     p4.button(
-        "⌫ Hapus", key="delete_project_btn", on_click=delete_project,
-        disabled=len(project_ids) <= 1, use_container_width=True
+        "🗑️ Hapus", key="delete_project_btn", on_click=delete_project,
+        disabled=len(project_ids) <= 1, use_container_width=True,
     )
-
-    r1, r2 = st.columns([3.6, 4.0], gap="small")
+    r1, r2 = st.columns([3.1, 4.45])
     r1.text_input(
-        "Nama proyek",
-        value=st.session_state.project_name,
-        key="project_rename",
-        label_visibility="collapsed",
-        placeholder="Nama aplikasi",
+        "Nama proyek", value=st.session_state.project_name, key="project_rename",
+        label_visibility="collapsed", placeholder="Nama proyek",
     )
     status = {
-        "saved": "● Tersimpan otomatis",
-        "saving": "● Menyimpan...",
-        "error": "● Gagal menyimpan",
-    }.get(st.session_state.get("autosave_status"), "● Tersimpan otomatis")
+        "saved": "🟢 Tersimpan otomatis",
+        "saving": "🟡 Menyimpan...",
+        "error": "🔴 Gagal menyimpan",
+    }.get(st.session_state.get("autosave_status"), "🟢 Tersimpan otomatis")
     saved_at = st.session_state.get("last_saved_at")
-    r2.markdown(
-        f'<div class="aog-project-status"><span class="aog-dot">●</span> '
-        f'{status.replace("● ", "")}'
-        + (f" · {saved_at}" if saved_at else "")
-        + "</div>",
-        unsafe_allow_html=True,
-    )
+    r2.caption(f"{status}" + (f" · {saved_at}" if saved_at else ""))
 
-col_left, col_center, col_right = st.columns([1.12, 2.55, 1.35], gap="small")
+col_left, col_center, col_right = st.columns([1.15, 2.6, 1.35], gap="medium")
 
 # ---------------------------- PANEL KIRI ----------------------------------
 with col_left:
     with st.container(height=PANEL_HEIGHT, border=True):
-        st.markdown('<div class="aog-section-title">▣ &nbsp;Pengaturan Chat</div>', unsafe_allow_html=True)
-
-        st.markdown('<div class="aog-section-label">Pilih Mode AI</div>', unsafe_allow_html=True)
-        st.selectbox(
-            "Mode AI",
-            ["Beranda", "Penulis", "Desain", "Coding", "Analisis"],
-            label_visibility="collapsed",
-            key="aog_ai_mode",
-        )
-
-        st.markdown('<div class="aog-section-label">Nama Halaman</div>', unsafe_allow_html=True)
+        st.markdown("##### 📄 Halaman")
         pages = design["pages"]
         st.selectbox(
             "Halaman aktif",
@@ -2087,26 +1743,24 @@ with col_left:
         )
         page = current_page()
         page.setdefault("id", uuid.uuid4().hex[:8])
-        page["name"] = st.text_input(
-            "Nama halaman", page["name"], key=f"pname_{page['id']}",
-            label_visibility="collapsed"
-        )
+        page["name"] = st.text_input("Nama halaman", page["name"], key=f"pname_{page['id']}")
+        b1, b2 = st.columns(2)
+        b1.button("➕ Tambah", on_click=add_page, use_container_width=True)
+        b2.button("🗑️ Hapus", on_click=delete_page, disabled=len(pages) <= 1, use_container_width=True)
 
-        b1, b2 = st.columns(2, gap="small")
-        b1.button("＋ Tambah", on_click=add_page, use_container_width=True)
-        b2.button("⌫ Hapus", on_click=delete_page, disabled=len(pages) <= 1, use_container_width=True)
-
-        st.markdown('<div class="aog-section-title" style="margin-top:10px;">⌁ &nbsp;Mode &amp; Komponen</div>', unsafe_allow_html=True)
         dnd_on = st.checkbox(
-            "Mode seret dan lepas",
+            "🖱️ Mode seret dan lepas",
             value=True,
             key="dnd_mode",
-            help="Matikan jika komponen seret-lepas tidak tampil.",
+            help="Matikan jika komponen seret-lepas tidak tampil di perangkatmu. Daftar tombol akan dipakai sebagai gantinya.",
         )
         elements = page["elements"]
 
         if dnd_on:
             dnd = get_dnd_component()
+            # Gunakan key yang berubah ketika daftar/urutan elemen berubah.
+            # Ini memaksa custom component D&D melakukan remount sehingga state
+            # browser tidak menyimpan daftar elemen lama setelah insert/delete/reorder.
             dnd_signature = hashlib.md5(
                 "|".join(
                     [
@@ -2136,26 +1790,39 @@ with col_left:
             if handle_dnd_event(event):
                 st.rerun()
         else:
-            grid = st.columns(2, gap="small")
+            st.markdown("##### ➕ Komponen")
+            grid = st.columns(2)
             for n, t in enumerate(ELEMENT_LABELS):
                 grid[n % 2].button(
-                    f"{ICONS.get(t, '▫️')} {ELEMENT_LABELS[t]}",
+                    ELEMENT_LABELS[t],
                     key=f"add_{t}",
                     on_click=add_element,
                     args=(t,),
                     use_container_width=True,
                 )
 
-        st.markdown('<div class="aog-section-title" style="margin-top:8px;">✎ &nbsp;Styling &amp; Tema</div>', unsafe_allow_html=True)
-        with st.expander("Pengaturan visual", expanded=False):
-            theme = design["theme"]
-            theme["primary"] = st.color_picker("Aksen", theme["primary"])
-            theme["bg"] = st.color_picker("Latar", theme["bg"])
-            theme["text"] = st.color_picker("Teks", theme["text"])
+            st.markdown("##### 🌳 Susunan")
+            if not elements:
+                st.caption("Belum ada elemen. Klik salah satu komponen di atas.")
+            for i, el in enumerate(elements):
+                is_sel = el["id"] == st.session_state.selected_id
+                r1, r2, r3 = st.columns([6, 1.4, 1.4], gap="small")
+                r1.button(
+                    f"{i + 1}. {ELEMENT_LABELS[el['type']]}{summary_of(el)}",
+                    key=f"sel_{el['id']}",
+                    on_click=select_element,
+                    args=(el["id"],),
+                    type="primary" if is_sel else "secondary",
+                    use_container_width=True,
+                )
+                r2.button("↑", key=f"up_{el['id']}", on_click=move_element, args=(i, -1),
+                          disabled=i == 0, help="Naikkan", use_container_width=True)
+                r3.button("↓", key=f"dn_{el['id']}", on_click=move_element, args=(i, 1),
+                          disabled=i == len(elements) - 1, help="Turunkan", use_container_width=True)
 
 # ---------------------------- PANEL TENGAH --------------------------------
 with col_center:
-    top1, top2 = st.columns([3.4, 1.05], gap="small")
+    top1, top2 = st.columns([2.2, 1])
     view = top1.radio(
         "Tampilan",
         ["Preview", "Kode HTML", "Prompt Master AI"],
@@ -2171,6 +1838,9 @@ with col_center:
         disabled=view != "Preview",
     )
 
+    # Output preview/kode/prompt dirender setelah seluruh panel kanan selesai.
+    # Ini penting agar perubahan widget properti/tema pada rerun yang sama
+    # langsung memakai state terbaru, bukan state sebelum widget diproses.
     center_output = st.empty()
     target = None
     if view == "Prompt Master AI":
@@ -2188,29 +1858,21 @@ with col_center:
 # ---------------------------- PANEL KANAN ---------------------------------
 with col_right:
     with st.container(height=PANEL_HEIGHT, border=True):
-        tab_prop, tab_tpl, tab_theme, tab_file = st.tabs(
-            ["Properti", "Template", "Tema", "Berkas"]
-        )
+        tab_prop, tab_tpl, tab_theme, tab_file = st.tabs(["Properti", "Template", "Tema", "Berkas"])
 
         with tab_prop:
             idx, sel = selected_element()
             if sel is None:
-                st.info("Klik komponen di panel kiri untuk mengubah propertinya.")
+                st.info("Klik salah satu baris di daftar Susunan (panel kiri) untuk mengubah propertinya.")
             else:
                 edit_properties(sel, idx)
 
         with tab_tpl:
             cats = ["Semua"] + sorted({t["category"] for t in TEMPLATES.values()})
             cat = st.selectbox("Kategori", cats, key="tpl_cat")
-            keys = [
-                k for k, t in TEMPLATES.items()
-                if cat == "Semua" or t["category"] == cat
-            ]
+            keys = [k for k, t in TEMPLATES.items() if cat == "Semua" or t["category"] == cat]
             choice = st.selectbox(
-                "Template",
-                keys,
-                format_func=lambda k: TEMPLATES[k]["name"],
-                key="tpl_choice",
+                "Template", keys, format_func=lambda k: TEMPLATES[k]["name"], key="tpl_choice"
             )
             tpl = TEMPLATES[choice]
             n_el = sum(len(p["elements"]) for p in tpl["pages"])
@@ -2221,7 +1883,8 @@ with col_right:
                 ["Ganti seluruh desain", "Tambahkan sebagai halaman baru"],
                 key="tpl_mode",
             )
-            st.button("✦ Pakai template", on_click=apply_template, use_container_width=True)
+            st.button("✨ Pakai template", on_click=apply_template, use_container_width=True)
+            st.caption("Mode ganti akan menimpa desain yang sedang dikerjakan. Unduh dulu lewat tab Berkas bila perlu.")
 
         with tab_theme:
             design["title"] = st.text_input("Nama aplikasi", design["title"])
@@ -2231,24 +1894,20 @@ with col_right:
             theme["text"] = st.color_picker("Warna teks", theme["text"])
             font_names = list(FONTS)
             theme["font"] = st.selectbox(
-                "Font",
-                font_names,
-                font_names.index(theme["font"]) if theme["font"] in font_names else 0,
+                "Font", font_names, font_names.index(theme["font"]) if theme["font"] in font_names else 0
             )
-            theme["width"] = st.slider(
-                "Lebar konten (px)", 360, 1200, int(theme["width"]), step=20
-            )
+            theme["width"] = st.slider("Lebar konten (px)", 360, 1200, int(theme["width"]), step=20)
 
         with tab_file:
             st.download_button(
-                "↓ Unduh desain (.json)",
+                "💾 Unduh desain (.json)",
                 json.dumps(design, ensure_ascii=False, indent=2),
                 file_name="desain.json",
                 mime="application/json",
                 use_container_width=True,
             )
             uploaded = st.file_uploader("Muat desain (.json)", type=["json"])
-            if uploaded is not None and st.button("↥ Terapkan file", use_container_width=True):
+            if uploaded is not None and st.button("📂 Terapkan file", use_container_width=True):
                 try:
                     data = json.loads(uploaded.getvalue().decode("utf-8"))
                     if valid_design(data):
@@ -2258,17 +1917,16 @@ with col_right:
                         st.error("Struktur file tidak sesuai format desain.")
                 except (json.JSONDecodeError, UnicodeDecodeError):
                     st.error("File bukan JSON yang valid.")
-            st.button("↻ Reset desain", on_click=reset_design, use_container_width=True)
+            st.button("♻️ Reset desain", on_click=reset_design, use_container_width=True)
 
 # ---------------------- RENDER OUTPUT TERBARU ------------------------------
+# Diletakkan setelah panel kanan supaya preview selalu memakai design yang sudah
+# diperbarui oleh widget pada rerun Streamlit saat ini.
 with center_output.container():
     if view == "Preview":
         tpl_key = st.session_state.get("tpl_choice")
         if st.session_state.get("tpl_preview") and tpl_key in TEMPLATES:
-            st.caption(
-                f"Pratinjau template: {TEMPLATES[tpl_key]['name']} "
-                "(belum diterapkan ke desainmu)"
-            )
+            st.caption(f"Pratinjau template: {TEMPLATES[tpl_key]['name']} (belum diterapkan ke desainmu)")
             inner = build_html(template_design(tpl_key))
         else:
             _, sel_el = selected_element()
@@ -2285,35 +1943,17 @@ with center_output.container():
 
     elif view == "Kode HTML":
         output = build_html(st.session_state.design)
-        st.download_button(
-            "↓ Unduh index.html",
-            output,
-            file_name="index.html",
-            mime="text/html",
-        )
+        st.download_button("⬇️ Unduh index.html", output, file_name="index.html", mime="text/html")
         with st.container(height=PANEL_HEIGHT - 110, border=True):
             st.code(output, language="html")
 
     else:
         output = build_prompt(st.session_state.design, target)
         st.download_button(
-            "↓ Unduh prompt_master.txt",
-            output,
-            file_name="prompt_master.txt",
-            mime="text/plain",
+            "⬇️ Unduh prompt_master.txt", output, file_name="prompt_master.txt", mime="text/plain"
         )
         with st.container(height=PANEL_HEIGHT - 160, border=True):
             st.code(output, language="markdown")
-
-st.markdown(
-    """
-<div class="aog-footer">
-  <span>AOG Intelligence Workspace</span>
-  <span><span class="online">●</span> Sistem Online &nbsp; ◌ &nbsp; ⚙ &nbsp; ◉</span>
-</div>
-""",
-    unsafe_allow_html=True,
-)
 
 # Autosave terakhir dijalankan setelah seluruh widget pada rerun ini menerapkan perubahan.
 autosave_project()
