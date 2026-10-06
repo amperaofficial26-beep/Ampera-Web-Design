@@ -848,7 +848,14 @@ def insert_element(el_type, index=None):
 
 
 def add_element(el_type):
-    insert_element(el_type)
+    """Tambah komponen dari dock bawah setelah elemen yang sedang dipilih."""
+    _, selected = selected_element()
+    if selected is None:
+        insert_element(el_type)
+        return
+    elements = current_page()["elements"]
+    selected_index = next((i for i, el in enumerate(elements) if el["id"] == selected["id"]), len(elements) - 1)
+    insert_element(el_type, selected_index + 1)
 
 
 def move_element(index, delta):
@@ -1922,7 +1929,7 @@ def mark_selected(rendered):
     return re.sub(r"^<(\w+)", r'<\1 data-sel="1"', rendered, count=1)
 
 
-def build_html(design, highlight_id=None, active=0):
+def build_html(design, highlight_id=None, active=0, builder_mode=False):
     theme = design["theme"]
     font = FONTS.get(theme.get("font"), FONTS["Sans-serif modern"])
     pages = design["pages"]
@@ -1943,7 +1950,13 @@ def build_html(design, highlight_id=None, active=0):
         parts = []
         for el in page["elements"]:
             rendered = render_element(el)
-            if highlight_id and el.get("id") == highlight_id:
+            if builder_mode:
+                selected_attr = ' data-sel="1"' if highlight_id and el.get("id") == highlight_id else ""
+                rendered = (
+                    f'<div class="builder-element" data-element-id="{esc(el.get("id", ""))}"{selected_attr}>'
+                    f'{rendered}</div>'
+                )
+            elif highlight_id and el.get("id") == highlight_id:
                 rendered = mark_selected(rendered)
             parts.append(rendered)
         body = "\n".join(parts) or '<p class="empty">Halaman ini masih kosong.</p>'
@@ -1955,6 +1968,25 @@ def build_html(design, highlight_id=None, active=0):
         if highlight_id
         else ""
     )
+    builder_css = ""
+    builder_script = ""
+    if builder_mode:
+        builder_css = """
+  .builder-element { position: relative; border: 1px solid transparent; border-radius: 6px; transition: outline .12s, background .12s, border-color .12s; cursor: pointer; }
+  .builder-element:hover { border-color: rgba(99,102,241,.42); outline: 2px solid rgba(99,102,241,.12); outline-offset: 2px; }
+  .builder-element[data-sel] { border-color: #6366f1; outline: 2px solid rgba(99,102,241,.18); outline-offset: 3px; }
+  .builder-element > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+"""
+        builder_script = """
+<script>
+  document.addEventListener("click", function (event) {
+    var el = event.target.closest ? event.target.closest("[data-element-id]") : null;
+    if (!el) return;
+    event.preventDefault();
+    event.stopPropagation();
+    window.parent.postMessage({type:"ui-builder-select", id:el.getAttribute("data-element-id")}, "*");
+  }, true);
+</script>"""
 
     script = ""
     if multi:
@@ -2069,14 +2101,14 @@ def build_html(design, highlight_id=None, active=0):
     border-top: 1px solid rgba(128,128,128,.35);
   }}
   .empty {{ opacity: .5; font-style: italic; }}
-{BAR_CSS}{highlight_css}</style>
+{BAR_CSS}{highlight_css}{builder_css}</style>
 </head>
 <body>
 <main class="app">
 <p class="app-title">{esc(design["title"])}</p>
 {nav}
 {chr(10).join(sections)}
-</main>{script}
+</main>{script}{builder_script}
 </body>
 </html>
 """
@@ -2182,246 +2214,202 @@ def build_prompt(design, target="HTML/CSS/JavaScript satu file"):
 # ---------------------------------------------------------------------------
 # Komponen seret dan lepas (HTML5 drag-and-drop, tanpa paket tambahan)
 # ---------------------------------------------------------------------------
-DND_HTML = r'''<!DOCTYPE html>
+DND_HTML = r'''
+<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="utf-8">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
 <style>
-  .mi { font-family: 'Material Symbols Rounded'; font-weight: 400; font-style: normal; font-size: 18px;
-    line-height: 1; display: inline-block; width: 1em; overflow: hidden; white-space: nowrap;
-    vertical-align: middle; font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
-  :root { --fg: #31333f; --bg2: #f0f2f6; --accent: #ff4b4b; --line: rgba(128,128,128,.35); }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: transparent; color: var(--fg);
-    font-family: "Source Sans Pro", system-ui, sans-serif; font-size: 14px; }
-  .title { font-weight: 600; margin: 4px 0 2px; }
-  .hint { opacity: .65; font-size: 12px; margin: 0 0 8px; }
-  #palette { margin-bottom: 14px; }
-  #palette details { margin-bottom: 4px; border-bottom: 1px solid var(--line); }
-  #palette summary { cursor: pointer; font-weight: 600; font-size: 13px; padding: 6px 0; user-select: none; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 0 10px; }
-  .chip { border: 1px solid var(--line); background: var(--bg2); border-radius: 10px;
-    padding: 5px 10px 5px 7px; cursor: grab; user-select: none; font-size: 13px;
-    display: inline-flex; align-items: center; gap: 5px; transition: border-color .12s, transform .12s; }
-  .chip:hover { border-color: var(--accent); transform: translateY(-1px); }
-  #list { list-style: none; margin: 0; padding: 6px 6px 14px; min-height: 64px;
-    border: 1px dashed var(--line); border-radius: 8px; }
-  #list:empty::before { content: "Seret komponen ke sini"; display: block;
-    text-align: center; opacity: .6; padding: 14px 0; }
-  #list.ins-empty { border-color: var(--accent); background: var(--bg2); }
-  li { display: flex; align-items: center; gap: 8px; padding: 7px 8px; margin: 0 0 6px;
-    border: 1px solid var(--line); border-radius: 8px; background: var(--bg2);
-    cursor: grab; user-select: none; position: relative; }
-  li.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-  li.dragging { opacity: .4; }
-  li.ins-before::before, li.ins-after::after { content: ""; position: absolute; left: 0; right: 0;
-    height: 3px; background: var(--accent); border-radius: 2px; }
-  li.ins-before::before { top: -5px; }
-  li.ins-after::after { bottom: -5px; }
-  .grip { opacity: .5; }
-  .lbl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .del { border: 0; background: transparent; color: inherit; cursor: pointer;
-    opacity: .55; font-size: 14px; padding: 0 4px; }
-  .del:hover { opacity: 1; color: var(--accent); }
+  .mi { font-family:'Material Symbols Rounded'; font-size:18px; line-height:1; display:inline-block;
+    width:1em; overflow:hidden; white-space:nowrap; vertical-align:middle; font-feature-settings:'liga'; }
+  :root { --fg:#31333f; --bg2:#f0f2f6; --accent:#ff4b4b; --line:rgba(128,128,128,.35); }
+  *{box-sizing:border-box} html,body{margin:0;padding:0;background:transparent;color:var(--fg);
+    font-family:Inter,system-ui,sans-serif;font-size:13px}
+  .title{font-weight:700;margin:2px 0 5px}.hint{opacity:.62;font-size:11px;margin:0 0 8px}
+  #list{list-style:none;margin:0;padding:6px;min-height:74px;border:1px dashed var(--line);
+    border-radius:12px;max-height:280px;overflow:auto}
+  #list:empty::before{content:"Tarik komponen ke sini, atau pilih komponen di bawah";
+    display:block;text-align:center;opacity:.55;padding:26px 8px}
+  #list.ins-empty{border-color:var(--accent);background:var(--bg2)}
+  li{display:flex;align-items:center;gap:7px;padding:8px 9px;margin:0 0 6px;border:1px solid var(--line);
+    border-radius:9px;background:var(--bg2);cursor:grab;user-select:none;position:relative}
+  li.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  li.dragging{opacity:.4}
+  li.ins-before::before,li.ins-after::after{content:"";position:absolute;left:0;right:0;height:3px;
+    background:var(--accent);border-radius:2px}
+  li.ins-before::before{top:-5px} li.ins-after::after{bottom:-5px}
+  .grip{opacity:.45}.lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .del{border:0;background:transparent;color:inherit;cursor:pointer;opacity:.55;padding:0 3px}
+  .del:hover{opacity:1;color:var(--accent)}
 </style>
 </head>
 <body>
-<div class="title">Komponen</div>
-<p class="hint">Seret ke daftar di bawah, atau klik untuk menambah di akhir.</p>
-<div id="palette"></div>
-<div class="title">Susunan</div>
-<p class="hint">Seret baris untuk mengubah urutan. Klik untuk memilih.</p>
+<div class="title">Susunan halaman</div>
+<p class="hint">Klik untuk memilih · seret untuk mengubah urutan · × untuk menghapus</p>
 <ul id="list"></ul>
 <script>
-(function () {
-  var items = [], palette = [], selected = null, drag = null;
-  var openGroups = { "Dasar": true };
-  try { var sv = sessionStorage.getItem("uib_groups"); if (sv) openGroups = JSON.parse(sv); } catch (e) {}
-  function icon(name) {
-    var s = document.createElement("span"); s.className = "mi"; s.textContent = name; return s;
-  }
-  var listEl = document.getElementById("list");
-  var palEl = document.getElementById("palette");
-
-  function post(type, data) {
-    window.parent.postMessage(Object.assign({ isStreamlitMessage: true, type: type }, data), "*");
-  }
-  function send(payload) {
-    payload.id = Date.now() + "-" + Math.random().toString(36).slice(2);
-    post("streamlit:setComponentValue", { value: payload, dataType: "json" });
-  }
-  function fit() {
-    post("streamlit:setFrameHeight", { height: document.documentElement.scrollHeight + 4 });
-  }
-  function clearInd() {
-    listEl.classList.remove("ins-empty");
-    listEl.querySelectorAll("li").forEach(function (li) {
-      li.classList.remove("ins-before", "ins-after");
-    });
-  }
-  function indexAt(y) {
-    var lis = listEl.querySelectorAll("li"), idx = 0;
-    for (var i = 0; i < lis.length; i++) {
-      var r = lis[i].getBoundingClientRect();
-      if (y > r.top + r.height / 2) idx++; else break;
-    }
-    return idx;
-  }
-  function showInd(idx) {
-    clearInd();
-    var lis = listEl.querySelectorAll("li");
-    if (!lis.length) { listEl.classList.add("ins-empty"); return; }
-    if (idx < lis.length) lis[idx].classList.add("ins-before");
-    else lis[lis.length - 1].classList.add("ins-after");
-  }
-
-  function render() {
-    palEl.textContent = "";
-    var groups = {}, order = [];
-    palette.forEach(function (p) {
-      var g = p.group || "Lainnya";
-      if (!groups[g]) { groups[g] = []; order.push(g); }
-      groups[g].push(p);
-    });
-    order.forEach(function (g) {
-      var d = document.createElement("details");
-      d.open = !!openGroups[g];
-      var sm = document.createElement("summary");
-      sm.textContent = g + " (" + groups[g].length + ")";
-      d.appendChild(sm);
-      var wrap = document.createElement("div");
-      wrap.className = "chips";
-      groups[g].forEach(function (p) {
-        var c = document.createElement("div");
-        c.className = "chip";
-        c.draggable = true;
-        c.appendChild(icon(p.icon));
-        c.appendChild(document.createTextNode(p.label));
-        c.addEventListener("dragstart", function (e) {
-          drag = { kind: "new", type: p.type };
-          e.dataTransfer.setData("text/plain", "new:" + p.type);
-          e.dataTransfer.effectAllowed = "copy";
-        });
-        c.addEventListener("dragend", function () { drag = null; clearInd(); });
-        c.addEventListener("click", function () {
-          send({ action: "insert", type: p.type, index: items.length });
-        });
-        wrap.appendChild(c);
-      });
-      d.appendChild(wrap);
-      d.addEventListener("toggle", function () {
-        openGroups[g] = d.open;
-        try { sessionStorage.setItem("uib_groups", JSON.stringify(openGroups)); } catch (e) {}
-        fit();
-      });
-      palEl.appendChild(d);
-    });
-
-    listEl.textContent = "";
-    items.forEach(function (it, i) {
-      var li = document.createElement("li");
-      li.draggable = true;
-      li.dataset.id = it.id;
-      if (it.id === selected) li.classList.add("sel");
-      var grip = document.createElement("span");
-      grip.className = "grip";
-      grip.textContent = "\u283F";
-      var lbl = document.createElement("span");
-      lbl.className = "lbl";
-      lbl.appendChild(icon(it.icon));
-      lbl.appendChild(document.createTextNode(" " + (i + 1) + ". " + it.label));
-      var del = document.createElement("button");
-      del.className = "del";
-      del.type = "button";
-      del.title = "Hapus";
-      del.appendChild(icon("close"));
-      del.addEventListener("click", function (e) {
-        e.stopPropagation();
-        send({ action: "delete", target: it.id });
-      });
-      li.appendChild(grip); li.appendChild(lbl); li.appendChild(del);
-      li.addEventListener("click", function () { send({ action: "select", target: it.id }); });
-      li.addEventListener("dragstart", function (e) {
-        drag = { kind: "move", id: it.id };
-        li.classList.add("dragging");
-        e.dataTransfer.setData("text/plain", "move:" + it.id);
-        e.dataTransfer.effectAllowed = "move";
-      });
-      li.addEventListener("dragend", function () {
-        drag = null; li.classList.remove("dragging"); clearInd();
-      });
+(function(){
+  var items=[],selected=null,drag=null;
+  var listEl=document.getElementById("list");
+  function post(type,data){window.parent.postMessage(Object.assign({isStreamlitMessage:true,type:type},data),"*");}
+  function send(payload){payload.id=Date.now()+"-"+Math.random().toString(36).slice(2);
+    post("streamlit:setComponentValue",{value:payload,dataType:"json"});}
+  function fit(){post("streamlit:setFrameHeight",{height:Math.min(document.documentElement.scrollHeight+4,360)});}
+  function clearInd(){listEl.classList.remove("ins-empty");
+    listEl.querySelectorAll("li").forEach(function(li){li.classList.remove("ins-before","ins-after");});}
+  function indexAt(y){var lis=listEl.querySelectorAll("li"),idx=0;
+    for(var i=0;i<lis.length;i++){var r=lis[i].getBoundingClientRect();if(y>r.top+r.height/2)idx++;else break;}return idx;}
+  function showInd(idx){clearInd();var lis=listEl.querySelectorAll("li");
+    if(!lis.length){listEl.classList.add("ins-empty");return;}
+    if(idx<lis.length)lis[idx].classList.add("ins-before");else lis[lis.length-1].classList.add("ins-after");}
+  function icon(name){var s=document.createElement("span");s.className="mi";s.textContent=name;return s;}
+  function fit(){post("streamlit:setFrameHeight",{height:78});}
+  function render(){
+    listEl.textContent="";
+    items.forEach(function(it,i){
+      var li=document.createElement("li");li.draggable=true;li.dataset.id=it.id;
+      if(it.id===selected)li.classList.add("sel");
+      var grip=document.createElement("span");grip.className="grip";grip.textContent="⠿";
+      var lbl=document.createElement("span");lbl.className="lbl";lbl.appendChild(icon(it.icon));
+      lbl.appendChild(document.createTextNode(" "+(i+1)+". "+it.label));
+      var del=document.createElement("button");del.className="del";del.type="button";del.title="Hapus";
+      del.appendChild(icon("close"));del.addEventListener("click",function(e){e.stopPropagation();send({action:"delete",target:it.id});});
+      li.appendChild(grip);li.appendChild(lbl);li.appendChild(del);
+      li.addEventListener("click",function(){send({action:"select",target:it.id});});
+      li.addEventListener("dragstart",function(e){drag={id:it.id};li.classList.add("dragging");
+        e.dataTransfer.setData("text/plain","move:"+it.id);e.dataTransfer.effectAllowed="move";});
+      li.addEventListener("dragend",function(){drag=null;li.classList.remove("dragging");clearInd();});
       listEl.appendChild(li);
     });
     fit();
   }
-
-  listEl.addEventListener("dragover", function (e) {
-    if (!drag) return;
+  listEl.addEventListener("dragover",function(e){
+    var external=e.dataTransfer.getData("text/plain")||"";
+    if(!drag && !external.startsWith("new:"))return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = drag.kind === "new" ? "copy" : "move";
+    e.dataTransfer.dropEffect=external.startsWith("new:")?"copy":"move";
     showInd(indexAt(e.clientY));
   });
-  listEl.addEventListener("dragleave", function (e) {
-    if (!listEl.contains(e.relatedTarget)) clearInd();
-  });
-  listEl.addEventListener("drop", function (e) {
+  listEl.addEventListener("dragleave",function(e){if(!listEl.contains(e.relatedTarget))clearInd();});
+  listEl.addEventListener("drop",function(e){
     e.preventDefault();
-    if (!drag) return;
-    var idx = indexAt(e.clientY);
-    clearInd();
-    if (drag.kind === "new") {
-      send({ action: "insert", type: drag.type, index: idx });
-    } else {
-      var ids = items.map(function (x) { return x.id; });
-      var from = ids.indexOf(drag.id);
-      if (from < 0) { drag = null; return; }
-      var to = idx;
-      if (from < to) to -= 1;
-      if (to === from) { drag = null; return; }
-      ids.splice(from, 1);
-      ids.splice(to, 0, drag.id);
-      var byId = {};
-      items.forEach(function (x) { byId[x.id] = x; });
-      items = ids.map(function (id) { return byId[id]; });
-      selected = drag.id;
-      send({ action: "reorder", order: ids, selected: drag.id });
-      render();
+    var external=e.dataTransfer.getData("text/plain")||"";
+    var idx=indexAt(e.clientY);clearInd();
+    if(external.startsWith("new:")){
+      send({action:"insert",type:external.slice(4),index:idx});
+      drag=null;
+      return;
     }
-    drag = null;
+    if(!drag)return;
+    var ids=items.map(function(x){return x.id;});
+    var from=ids.indexOf(drag.id);if(from<0){drag=null;return;}var to=idx;if(from<to)to--;
+    if(to!==from){ids.splice(from,1);ids.splice(to,0,drag.id);selected=drag.id;send({action:"reorder",order:ids,selected:drag.id});}
+    drag=null;
   });
-
-  function applyTheme(t) {
-    if (!t) return;
-    var r = document.documentElement.style;
-    if (t.textColor) r.setProperty("--fg", t.textColor);
-    if (t.secondaryBackgroundColor) r.setProperty("--bg2", t.secondaryBackgroundColor);
-    if (t.primaryColor) r.setProperty("--accent", t.primaryColor);
-    if (t.font) document.body.style.fontFamily = t.font;
-  }
-
-  window.addEventListener("message", function (e) {
-    var d = e.data;
-    if (!d || d.type !== "streamlit:render") return;
-    var a = d.args || {};
-    items = a.items || [];
-    palette = a.palette || [];
-    selected = a.selected || null;
-    applyTheme(d.theme);
-    render();
+  window.addEventListener("message",function(e){
+    var d=e.data;if(!d||d.type!=="streamlit:render")return;
+    var a=d.args||{};items=a.items||[];selected=a.selected||null;render();
   });
-  window.addEventListener("resize", fit);
-  post("streamlit:componentReady", { apiVersion: 1 });
+  window.addEventListener("resize",fit);
+  post("streamlit:componentReady",{apiVersion:1});
 })();
 </script>
 </body>
 </html>
 '''
 
+PALETTE_HTML = r'''
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
+<style>
+  *{box-sizing:border-box}html,body{margin:0;padding:0;background:transparent;font-family:Inter,system-ui,sans-serif;color:#252733}
+  .dock{border:1px solid rgba(128,128,128,.28);background:rgba(255,255,255,.72);border-radius:16px;padding:10px 12px;
+    box-shadow:0 8px 24px rgba(0,0,0,.06)}
+  .head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .title{font-size:13px;font-weight:700}.hint{font-size:11px;opacity:.58}
+  .scroll{display:flex;gap:7px;overflow-x:auto;padding:2px 1px 5px;scrollbar-width:thin}
+  .chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(128,128,128,.28);
+    background:#f5f6f8;border-radius:10px;padding:8px 11px;font-size:12px;cursor:pointer;white-space:nowrap;
+    transition:.12s}
+  .chip:hover{transform:translateY(-1px);border-color:#6366f1;background:#eef2ff}
+  .chip .mi{font-family:'Material Symbols Rounded';font-size:17px;line-height:1}
+  .group{flex:0 0 auto;font-size:10px;font-weight:700;opacity:.55;padding:8px 3px 0}
+</style>
+</head>
+<body>
+<div class="dock">
+  <div class="head"><div class="title">Komponen</div><div class="hint">Klik komponen untuk menambah ke Susunan</div></div>
+  <div id="scroll" class="scroll"></div>
+</div>
+<script>
+(function(){
+  var palette=[],root=document.getElementById("scroll");
+  function post(type,data){window.parent.postMessage(Object.assign({isStreamlitMessage:true,type:type},data),"*");}
+  function send(payload){payload.id=Date.now()+"-"+Math.random().toString(36).slice(2);
+    post("streamlit:setComponentValue",{value:payload,dataType:"json"});}
+  function icon(name){var s=document.createElement("span");s.className="mi";s.textContent=name;return s;}
+  function render(){
+    root.textContent="";var last="";
+    palette.forEach(function(p){
+      if(p.group!==last){var g=document.createElement("span");g.className="group";g.textContent=p.group;root.appendChild(g);last=p.group;}
+      var c=document.createElement("button");c.type="button";c.className="chip";c.draggable=true;
+      c.appendChild(icon(p.icon||"widgets"));
+      c.appendChild(document.createTextNode(p.label));c.title="Klik atau seret ke Susunan";
+      c.addEventListener("dragstart",function(e){
+        e.dataTransfer.setData("text/plain","new:"+p.type);
+        e.dataTransfer.effectAllowed="copy";
+      });
+      c.addEventListener("click",function(){send({action:"insert",type:p.type});});
+      root.appendChild(c);
+    });
+    fit();
+  }
+  window.addEventListener("message",function(e){var d=e.data;if(!d||d.type!=="streamlit:render")return;
+    palette=(d.args||{}).palette||[];render();});
+  post("streamlit:componentReady",{apiVersion:1});
+})();
+</script>
+</body>
+</html>
+'''
+
+PREVIEW_HTML = r'''
+<!DOCTYPE html>
+<html lang="id">
+<head><meta charset="utf-8"><style>
+html,body{margin:0;width:100%;height:100%;background:#e5e7eb}
+body{display:flex;justify-content:center;padding:12px;box-sizing:border-box;overflow:hidden}
+iframe{width:100%;height:100%;border:0;background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+</style></head>
+<body><iframe id="preview"></iframe>
+<script>
+(function(){
+  var frame=document.getElementById("preview");
+  function post(type,data){window.parent.postMessage(Object.assign({isStreamlitMessage:true,type:type},data),"*");}
+  function send(payload){payload.id=Date.now()+"-"+Math.random().toString(36).slice(2);
+    post("streamlit:setComponentValue",{value:payload,dataType:"json"});}
+  function fit(){post("streamlit:setFrameHeight",{height:620});}
+  window.addEventListener("message",function(e){
+    var d=e.data;if(!d)return;
+    if(d.type==="streamlit:render"){
+      var a=d.args||{};frame.style.width=a.deviceWidth?a.deviceWidth+"px":"100%";frame.style.maxWidth="100%";
+      frame.srcdoc=a.html||"";fit();
+    }
+    if(d.type==="ui-builder-select"&&d.id){send({action:"select",target:d.id});}
+  });
+  post("streamlit:componentReady",{apiVersion:1});
+})();
+</script>
+</body>
+</html>
+'''
 
 @st.cache_resource
 def get_dnd_component():
-    """Daftarkan komponen kustom dari folder sementara yang dibuat saat dijalankan."""
     digest = hashlib.md5(DND_HTML.encode("utf-8")).hexdigest()[:8]
     folder = Path(tempfile.gettempdir()) / f"ui_builder_dnd_{digest}"
     folder.mkdir(parents=True, exist_ok=True)
@@ -2429,8 +2417,26 @@ def get_dnd_component():
     return components.declare_component(f"ui_builder_dnd_{digest}", path=str(folder))
 
 
+@st.cache_resource
+def get_palette_component():
+    digest = hashlib.md5(PALETTE_HTML.encode("utf-8")).hexdigest()[:8]
+    folder = Path(tempfile.gettempdir()) / f"ui_builder_palette_{digest}"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "index.html").write_text(PALETTE_HTML, encoding="utf-8")
+    return components.declare_component(f"ui_builder_palette_{digest}", path=str(folder))
+
+
+@st.cache_resource
+def get_preview_component():
+    digest = hashlib.md5(PREVIEW_HTML.encode("utf-8")).hexdigest()[:8]
+    folder = Path(tempfile.gettempdir()) / f"ui_builder_preview_{digest}"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "index.html").write_text(PREVIEW_HTML, encoding="utf-8")
+    return components.declare_component(f"ui_builder_preview_{digest}", path=str(folder))
+
+
 def handle_dnd_event(event):
-    """Terapkan event dari komponen seret-lepas. Mengembalikan True jika state berubah."""
+    'Terapkan event dari panel Susunan.'
     if not isinstance(event, dict):
         return False
     event_id = event.get("id")
@@ -2454,10 +2460,6 @@ def handle_dnd_event(event):
             if event.get("selected") in by_id:
                 st.session_state.selected_id = event["selected"]
         return True
-    if action == "insert":
-        if event.get("type") in ELEMENT_LABELS:
-            insert_element(event["type"], event.get("index"))
-        return True
     if action == "delete":
         target = event.get("target")
         for i, el in enumerate(els):
@@ -2465,7 +2467,39 @@ def handle_dnd_event(event):
                 delete_element(i)
                 break
         return True
+    if action == "insert":
+        if event.get("type") in ELEMENT_LABELS:
+            insert_element(event["type"], event.get("index"))
+        return True
     return False
+
+
+def handle_palette_event(event):
+    if not isinstance(event, dict):
+        return False
+    event_id = event.get("id")
+    if not event_id or event_id == st.session_state.get("last_palette_event"):
+        return False
+    st.session_state.last_palette_event = event_id
+    if event.get("action") == "insert" and event.get("type") in ELEMENT_LABELS:
+        add_element(event["type"])
+        return True
+    return False
+
+def handle_preview_event(event):
+    if not isinstance(event, dict):
+        return False
+    event_id = event.get("id")
+    if not event_id or event_id == st.session_state.get("last_preview_event"):
+        return False
+    st.session_state.last_preview_event = event_id
+    if event.get("action") == "select":
+        target = event.get("target")
+        if any(el.get("id") == target for el in current_page()["elements"]):
+            st.session_state.selected_id = target
+            return True
+    return False
+
 
 
 # ---------------------------------------------------------------------------
@@ -2703,9 +2737,11 @@ with st.expander(":material/lightbulb: Cara pakai singkat", expanded=False):
     g3.markdown(":material/dashboard: **3. Mulai dari template**\n\nTab Template berisi galeri siap pakai dan referensi gaya desain.")
     g4.markdown(":material/code: **4. Ambil hasilnya**\n\nPilih Kode HTML atau Prompt AI di atas preview, lalu unduh.")
 
-col_left, col_center, col_right = st.columns([1.15, 2.6, 1.35], gap="medium")
+col_left, col_center, col_right = st.columns([1.05, 2.7, 1.45], gap="medium")
 
 # ---------------------------- PANEL KIRI ----------------------------------
+# Panel kiri sekarang hanya untuk mengelola halaman. Daftar komponen dipindahkan
+# ke dock horizontal di bagian paling bawah agar tidak mengganggu area editor.
 with col_left:
     with st.container(height=PANEL_HEIGHT, border=True, key="panel_left"):
         st.markdown("##### :material/description: Halaman")
@@ -2723,81 +2759,33 @@ with col_left:
         page["name"] = st.text_input("Nama halaman", page["name"], key=f"pname_{page['id']}")
         b1, b2 = st.columns(2)
         b1.button("Tambah", icon=":material/add:", on_click=add_page, use_container_width=True)
-        b2.button("Hapus", icon=":material/delete:", on_click=delete_page, disabled=len(pages) <= 1, use_container_width=True)
-
-        dnd_on = st.checkbox(
-            ":material/drag_indicator: Mode seret dan lepas",
-            value=True,
-            key="dnd_mode",
-            help="Matikan jika komponen seret-lepas tidak tampil di perangkatmu. Daftar tombol akan dipakai sebagai gantinya.",
+        b2.button(
+            "Hapus", icon=":material/delete:", on_click=delete_page,
+            disabled=len(pages) <= 1, use_container_width=True
         )
-        elements = page["elements"]
 
-        if dnd_on:
-            dnd = get_dnd_component()
-            # Gunakan key yang berubah ketika daftar/urutan elemen berubah.
-            # Ini memaksa custom component D&D melakukan remount sehingga state
-            # browser tidak menyimpan daftar elemen lama setelah insert/delete/reorder.
-            dnd_signature = hashlib.md5(
-                "|".join(
-                    [
-                        str(page.get("id", "")),
-                        *[f"{el.get('id','')}:{el.get('type','')}" for el in elements],
-                    ]
-                ).encode("utf-8")
-            ).hexdigest()[:10]
-
-            event = dnd(
-                items=[
-                    {
-                        "id": el["id"],
-                        "label": ELEMENT_LABELS[el["type"]] + summary_of(el),
-                        "icon": ICONS.get(el["type"], "widgets"),
-                    }
-                    for el in elements
-                ],
-                palette=[
-                    {"type": t, "label": ELEMENT_LABELS[t], "icon": ICONS.get(t, "widgets"), "group": ELEMENT_GROUP[t]}
-                    for t in sorted(ELEMENT_LABELS, key=lambda x: GROUP_ORDER.index(ELEMENT_GROUP[x]))
-                ],
-                selected=st.session_state.selected_id,
-                key=f"dnd_list_{dnd_signature}",
-                default=None,
-            )
-            if handle_dnd_event(event):
-                st.rerun()
+        st.divider()
+        st.markdown("##### :material/layers: Ringkasan")
+        st.caption(f"{len(page['elements'])} komponen di halaman ini")
+        if st.session_state.get("selected_id"):
+            _, _sel = selected_element()
+            if _sel:
+                st.success(
+                    f"Terpilih: {ELEMENT_LABELS[_sel['type']]}",
+                    icon=":material/touch_app:",
+                )
         else:
-            st.markdown("##### :material/add_circle: Komponen")
-            grid = st.columns(2)
-            for n, t in enumerate(ELEMENT_LABELS):
-                grid[n % 2].button(
-                    ELEMENT_LABELS[t],
-                    icon=f":material/{ICONS.get(t, 'widgets')}:",
-                    key=f"add_{t}",
-                    on_click=add_element,
-                    args=(t,),
-                    use_container_width=True,
-                )
+            st.info(
+                "Pilih komponen dari Preview atau panel Susunan di kanan.",
+                icon=":material/touch_app:",
+            )
 
-            st.markdown("##### :material/account_tree: Susunan")
-            if not elements:
-                st.caption("Belum ada elemen. Klik salah satu komponen di atas.")
-            for i, el in enumerate(elements):
-                is_sel = el["id"] == st.session_state.selected_id
-                r1, r2, r3 = st.columns([6, 1.4, 1.4], gap="small")
-                r1.button(
-                    f"{i + 1}. {ELEMENT_LABELS[el['type']]}{summary_of(el)}",
-                    icon=f":material/{ICONS.get(el['type'], 'widgets')}:",
-                    key=f"sel_{el['id']}",
-                    on_click=select_element,
-                    args=(el["id"],),
-                    type="primary" if is_sel else "secondary",
-                    use_container_width=True,
-                )
-                r2.button("↑", key=f"up_{el['id']}", on_click=move_element, args=(i, -1),
-                          disabled=i == 0, help="Naikkan", use_container_width=True)
-                r3.button("↓", key=f"dn_{el['id']}", on_click=move_element, args=(i, 1),
-                          disabled=i == len(elements) - 1, help="Turunkan", use_container_width=True)
+        st.divider()
+        st.markdown("##### :material/lightbulb: Alur baru")
+        st.caption("1. Pilih komponen di dock bawah.")
+        st.caption("2. Komponen masuk ke Susunan di kanan.")
+        st.caption("3. Klik komponen di Preview atau Susunan.")
+        st.caption("4. Edit langsung di panel Properti.")
 
 # ---------------------------- PANEL TENGAH --------------------------------
 with col_center:
@@ -2822,10 +2810,6 @@ with col_center:
         label_visibility="collapsed",
         disabled=view != "Preview",
     )
-
-    # Output preview/kode/prompt dirender setelah seluruh panel kanan selesai.
-    # Ini penting agar perubahan widget properti/tema pada rerun yang sama
-    # langsung memakai state terbaru, bukan state sebelum widget diproses.
     center_output = st.empty()
     target = None
     if view == "Prompt Master AI":
@@ -2841,23 +2825,61 @@ with col_center:
         )
 
 # ---------------------------- PANEL KANAN ---------------------------------
+# Panel kanan sekarang menjadi area utama untuk Susunan + Properti.
 with col_right:
     with st.container(height=PANEL_HEIGHT, border=True, key="panel_right"):
-        tab_prop, tab_tpl, tab_theme, tab_file = st.tabs([
-            ":material/tune: Properti", ":material/dashboard: Template",
-            ":material/palette: Tema", ":material/folder: Berkas",
+        tab_editor, tab_tpl, tab_theme, tab_file = st.tabs([
+            ":material/edit_note: Editor",
+            ":material/dashboard: Template",
+            ":material/palette: Tema",
+            ":material/folder: Berkas",
         ])
 
-        with tab_prop:
+        with tab_editor:
+            elements = current_page()["elements"]
+            st.markdown("##### :material/account_tree: Susunan")
+            st.caption("Komponen yang kamu tambahkan muncul di sini. Seret untuk mengubah urutan.")
+
+            dnd = get_dnd_component()
+            dnd_signature = hashlib.md5(
+                "|".join(
+                    [
+                        str(current_page().get("id", "")),
+                        *[f"{el.get('id','')}:{el.get('type','')}" for el in elements],
+                    ]
+                ).encode("utf-8")
+            ).hexdigest()[:10]
+
+            dnd_event = dnd(
+                items=[
+                    {
+                        "id": el["id"],
+                        "label": ELEMENT_LABELS[el["type"]] + summary_of(el),
+                        "icon": ICONS.get(el["type"], "widgets"),
+                    }
+                    for el in elements
+                ],
+                selected=st.session_state.selected_id,
+                key=f"layer_list_{dnd_signature}",
+                default=None,
+            )
+            if handle_dnd_event(dnd_event):
+                st.rerun()
+
+            st.divider()
+            st.markdown("##### :material/tune: Properti")
+
             idx, sel = selected_element()
             if sel is None:
-                st.info("Belum ada elemen terpilih. Klik satu baris di Susunan (panel kiri) untuk mengubah propertinya.", icon=":material/touch_app:")
+                st.info(
+                    "Belum ada komponen yang dipilih. Klik komponen di Preview atau Susunan.",
+                    icon=":material/touch_app:",
+                )
             else:
                 edit_properties(sel, idx)
 
         with tab_tpl:
             sub_gal, sub_ref = st.tabs([":material/grid_view: Galeri", ":material/palette: Referensi gaya"])
-
             with sub_gal:
                 st.text_input("Cari template", key="tpl_q", placeholder="Ketik nama, kategori, atau kata kunci")
                 cats = ["Semua"] + sorted({t["category"] for t in TEMPLATES.values()})
@@ -2956,9 +2978,27 @@ with col_right:
                     st.error("File bukan JSON yang valid.")
             st.button("Reset desain", icon=":material/restart_alt:", on_click=reset_design, use_container_width=True)
 
+# ---------------------------- DOCK KOMPONEN --------------------------------
+# Semua komponen berada di bagian bawah sehingga tidak lagi menghabiskan tinggi
+# panel kiri. Klik chip -> masuk ke Susunan dan langsung terpilih.
+palette_component = get_palette_component()
+palette_event = palette_component(
+    palette=[
+        {
+            "type": t,
+            "label": ELEMENT_LABELS[t],
+            "icon": ICONS.get(t, "widgets"),
+            "group": ELEMENT_GROUP[t],
+        }
+        for t in sorted(ELEMENT_LABELS, key=lambda x: (GROUP_ORDER.index(ELEMENT_GROUP[x]), ELEMENT_LABELS[x]))
+    ],
+    key="component_palette_bottom",
+    default=None,
+)
+if handle_palette_event(palette_event):
+    st.rerun()
+
 # ---------------------- RENDER OUTPUT TERBARU ------------------------------
-# Diletakkan setelah panel kanan supaya preview selalu memakai design yang sudah
-# diperbarui oleh widget pada rerun Streamlit saat ini.
 with center_output.container():
     if view == "Preview":
         tpl_key = st.session_state.get("tpl_choice")
@@ -2971,24 +3011,33 @@ with center_output.container():
                 st.session_state.design,
                 highlight_id=sel_el["id"] if sel_el else None,
                 active=st.session_state.page_idx,
+                builder_mode=True,
             )
-        framed = device_frame(inner, DEVICES[device])
-        if hasattr(st, "iframe"):
-            st.iframe(framed, height=PANEL_HEIGHT - 50)
-        else:
-            components.html(framed, height=PANEL_HEIGHT - 50, scrolling=False)
+
+        preview_component = get_preview_component()
+        preview_event = preview_component(
+            html=inner,
+            deviceWidth=DEVICES[device],
+            key="builder_live_preview",
+            default=None,
+        )
+        if handle_preview_event(preview_event):
+            st.rerun()
 
     elif view == "Kode HTML":
         output = build_html(st.session_state.design)
-        st.download_button("Unduh index.html", output, file_name="index.html", mime="text/html", icon=":material/download:")
+        st.download_button(
+            "Unduh index.html", output, file_name="index.html",
+            mime="text/html", icon=":material/download:"
+        )
         with st.container(height=PANEL_HEIGHT - 110, border=True):
             st.code(output, language="html")
 
     else:
         output = build_prompt(st.session_state.design, target)
         st.download_button(
-            "Unduh prompt_master.txt", output, file_name="prompt_master.txt", mime="text/plain",
-            icon=":material/download:",
+            "Unduh prompt_master.txt", output, file_name="prompt_master.txt",
+            mime="text/plain", icon=":material/download:",
         )
         with st.container(height=PANEL_HEIGHT - 160, border=True):
             st.code(output, language="markdown")
