@@ -1,15 +1,16 @@
-"""Render, deskripsi, dan editor untuk 70 komponen bar.
+"""Dispatcher render, deskripsi, dan editor untuk 170 komponen bar.
 
-Spesifikasi datanya ada di bar_specs.py.
-- 20 bar inti punya cabang `if t == "..."` di render_bar() di bawah ini.
-- 50 bar tambahan (formulir, media, sosial, toko, dll.) renderer-nya ada di
-  bars_extra.py dan otomatis dipakai lewat EXTRA_BAR_RENDERERS.
+Spesifikasi datanya ada di bar_specs.py dan modul spesifik setiap paket.
+Render inti, tambahan lama, paket Pro, serta 50 komponen katalog terbaru
+bergabung otomatis lewat dispatcher render_bar().
 """
 import streamlit as st
 
 from bar_specs import BAR_SPECS, ICON_HINT, STATUS_ICONS, STATUS_KINDS
 from bars_extra import EXTRA_BAR_RENDERERS
 from bars_pro import PRO_BAR_RENDERERS
+from bars_addons import render_catalog_bar
+from bar_specs_addons import COMPONENT_BAR_SPECS
 from config import ALIGNS
 from styles import soft_style
 from utils import clamp_int, esc, lines_of, mi, parts_of, safe_url
@@ -167,6 +168,8 @@ def render_bar(el):
     render_pro = PRO_BAR_RENDERERS.get(t)
     if render_pro:
         return render_pro(el)
+    if t in COMPONENT_BAR_SPECS:
+        return render_catalog_bar(el)
     return ""
 
 

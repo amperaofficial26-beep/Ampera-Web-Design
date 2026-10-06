@@ -1,8 +1,7 @@
-"""Spesifikasi 70 komponen bar (navigasi, aksi, informasi, data, formulir, media, sosial, toko).
+"""Spesifikasi gabungan 170 komponen bar (inti, tambahan, Pro, dan katalog baru).
 
-Hanya data murni, tanpa Streamlit. Untuk menambah bar baru: tambahkan satu entri
-di BAR_SPECS, lalu tulis cabang render-nya di bars.py (fungsi render_bar) atau
-daftarkan di bars_extra.EXTRA_BAR_RENDERERS untuk 50 komponen tambahan.
+Hanya data murni, tanpa Streamlit. Spesifikasi bar inti dan paket lama disimpan
+pada berkas ini; komponen Pro dan komponen tambahan dimuat dari modul spesifiknya.
 """
 
 GROUP_ORDER = [
@@ -474,4 +473,9 @@ BAR_SPECS.update(PRO_BAR_SPECS)
 for _group in PRO_GROUP_ORDER:
     if _group not in GROUP_ORDER:
         GROUP_ORDER.append(_group)
+
+# Tambahan baru bersifat aditif: komponen lama dan paket Pro tetap tersedia.
+from bar_specs_addons import COMPONENT_BAR_SPECS  # noqa: E402
+
+BAR_SPECS.update(COMPONENT_BAR_SPECS)
 del _group
