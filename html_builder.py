@@ -5,9 +5,9 @@ import re
 from bars import render_bar
 from bar_specs import BAR_SPECS
 from config import FONTS
-from css import BAR_CSS, ICON_LINK
+from css import BAR_CSS, GLASS_PAGE_CSS, ICON_LINK
 from styles import element_style_attr, ensure_element_style
-from utils import align_of, esc, input_kind, lines_of, num, on_color, parse_links, safe_url
+from utils import align_of, clamp_int, esc, input_kind, lines_of, num, on_color, parse_links, safe_url
 
 
 def render_element(el):
@@ -96,6 +96,13 @@ def build_html(design, highlight_id=None, active=0, builder_mode=False):
     multi = len(pages) > 1
     active = min(max(active, 0), len(pages) - 1)
 
+    # Lapisan glassmorphism untuk halaman hasil (aktif bila tema memakai efek kaca).
+    glass = bool(theme.get("glass"))
+    glass_blur = clamp_int(theme.get("glass_blur"), 0, 60, 18)
+    glass_css = GLASS_PAGE_CSS if glass else ""
+    glass_layer = '<div class="glass-bg" aria-hidden="true"><i></i><i></i><i></i></div>' if glass else ""
+    body_class = ' class="glass"' if glass else ""
+
     nav = ""
     if multi:
         links = "".join(
@@ -175,6 +182,7 @@ def build_html(design, highlight_id=None, active=0, builder_mode=False):
     --on-primary: {on_color(theme["primary"])};
     --bg: {esc(theme["bg"])};
     --text: {esc(theme["text"])};
+    --glass-blur: {glass_blur}px;
   }}
   * {{ box-sizing: border-box; }}
   body {{
@@ -261,9 +269,10 @@ def build_html(design, highlight_id=None, active=0, builder_mode=False):
     border-top: 1px solid rgba(128,128,128,.35);
   }}
   .empty {{ opacity: .5; font-style: italic; }}
-{BAR_CSS}{highlight_css}{builder_css}</style>
+{BAR_CSS}{highlight_css}{builder_css}{glass_css}</style>
 </head>
-<body>
+<body{body_class}>
+{glass_layer}
 <main class="app">
 <p class="app-title">{esc(design["title"])}</p>
 {nav}
@@ -279,10 +288,11 @@ def device_frame(inner_html, width):
     w = f"{width}px" if width else "100%"
     return (
         '<!DOCTYPE html><html><head><meta charset="utf-8"><style>'
-        "html,body{margin:0;height:100%;background:#e5e7eb}"
+        "html,body{margin:0;height:100%;"
+        "background:linear-gradient(160deg,#eef2ff,#f8f9ff 45%,#fdf2f8)}"
         "body{display:flex;justify-content:center;padding:12px;box-sizing:border-box}"
-        f"iframe{{width:{w};max-width:100%;height:100%;border:0;background:#fff;"
-        "border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.18)}}"
+        f"iframe{{width:{w};max-width:100%;height:100%;border:1px solid rgba(255,255,255,.7);background:#fff;"
+        "border-radius:16px;box-shadow:0 18px 40px rgba(31,38,135,.18),inset 0 1px 0 rgba(255,255,255,.6)}}"
         f'</style></head><body><iframe srcdoc="{html.escape(inner_html, quote=True)}">'
         "</iframe></body></html>"
     )

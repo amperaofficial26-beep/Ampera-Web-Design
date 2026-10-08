@@ -2,10 +2,11 @@
 from design import theme_of
 
 
-def _ref(desc, primary, bg, text, font, width, radius, border_width, border_color, shadow, surface, ink="inherit"):
+def _ref(desc, primary, bg, text, font, width, radius, border_width, border_color, shadow, surface, ink="inherit",
+         glass=False, glass_blur=18):
     return {
         "desc": desc,
-        "theme": theme_of(primary, bg, text, font, width),
+        "theme": theme_of(primary, bg, text, font, width, glass=glass, glass_blur=glass_blur),
         "shape": {
             "radius": radius,
             "border_width": border_width,
@@ -136,6 +137,6 @@ EXTRA_DESIGN_REFS = {
         "0 0 20px rgba(163,230,53,.18)", "#1b2112", "#eff8d9"),
     "Kaca samudra": _ref(
         "Aqua, biru malam, dan panel transparan untuk permukaan kaca yang segar.",
-        "#22d3ee", "#0e1b2d", "#e6fbff", "Humanis", 840, 22, 1, "#416276",
-        "0 10px 28px rgba(34,211,238,.20)", "#172d40", "#e6fbff"),
+        "#22d3ee", "#0e1b2d", "#e6fbff", "Humanis", 840, 22, 1, "rgba(255,255,255,.35)",
+        "0 10px 28px rgba(34,211,238,.20)", "rgba(23,45,64,.55)", "#e6fbff", glass=True, glass_blur=22),
 }

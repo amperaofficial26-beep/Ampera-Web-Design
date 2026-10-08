@@ -16,6 +16,7 @@ Jalankan: `streamlit run app.py` (semua modul Python berada dalam satu folder).
 | `bars_pro.py` | Renderer **50 komponen Pro** | mengubah render komponen Pro |
 | `bars_addons.py` | Renderer **50 komponen tambahan terbaru** | mengubah tampilan HTML komponen terbaru |
 | `css.py` | CSS gabungan untuk preview/hasil dan editor Streamlit | mengubah tema tampilan |
+| `css_glass.py` | **Lapisan glassmorphism**: tema editor (`APP_CSS_GLASS`) dan efek kaca halaman hasil (`GLASS_PAGE_CSS`) | mengubah blur, warna kaca, garis tepi, bayangan |
 | `css_pro.py` | CSS untuk 50 komponen Pro | mengubah gaya paket Pro |
 | `css_addons.py` | CSS untuk 50 komponen tambahan terbaru | mengubah gaya komponen terbaru |
 | `templates.py` | **84 template** dan fungsi pembantu `H`, `P`, `B`, `BAR`, dst. | menambah template siap pakai |
@@ -57,6 +58,24 @@ Ada **170 komponen bar** dan **12 elemen dasar**, total **182 komponen**. Penamb
 - Setiap preset gaya mengatur palet warna, font, lebar konten, radius, garis, permukaan, dan bayangan.
 - Template dan gaya bisa dicari; galeri katalog dibatasi area scroll agar panel kanan tetap ringkas.
 - Panel halaman dan panel editor dibuat lebih lapang, dengan hierarki dan ringkasan yang lebih jelas.
+
+## Tampilan glassmorphism
+
+Seluruh editor dan halaman hasil memakai bahasa desain kaca (*glassmorphism*):
+
+- **Editor Streamlit** — latar aurora berwarna dengan panel, kartu, tombol, tab, kolom isian,
+  dan dropdown berbahan kaca (`backdrop-filter`, garis tepi putih tipis, kilau tepi, bayangan lembut).
+  Semua warna kaca diatur lewat token `--g-*` di `css_glass.py`, dan warna dasar widget
+  diselaraskan melalui `.streamlit/config.toml`.
+- **Halaman hasil (preview & ekspor)** — aktifkan di **Tema → Efek kaca** atau dengan
+  menerapkan preset **Glassmorphism** / **Kaca samudra**. Lapisan kaca menambahkan latar
+  gradien berwarna, bulatan cahaya blur yang bergerak halus, serta efek buram pada kartu,
+  menu navigasi, tombol, dan kolom isian. Kekuatan blur diatur `theme["glass_blur"]`
+  (4–40 px) dan dikirim ke HTML sebagai variabel `--glass-blur`.
+- Kompatibilitas dijaga: `@supports not (backdrop-filter)` menyediakan permukaan lebih pekat,
+  animasi dinonaktifkan saat perangkat memakai `prefers-reduced-motion`, dan desain tanpa
+  `glass: True` tetap tampil persis seperti sebelumnya.
+- Prompt Master AI ikut menyebutkan efek kaca beserta nilai blur-nya saat fitur ini aktif.
 
 ## Menambah komponen
 

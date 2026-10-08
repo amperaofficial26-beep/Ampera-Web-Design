@@ -2,7 +2,7 @@
 from bar_specs import BAR_SPECS
 from config import FONTS
 from design import theme_of
-from utils import esc, on_color
+from utils import esc, on_color, with_alpha
 
 DESIGN_REFS = {
     "Minimalis": {
@@ -12,10 +12,11 @@ DESIGN_REFS = {
         "surface": "transparent", "ink": "inherit",
     },
     "Glassmorphism": {
-        "desc": "Lapisan kaca tembus pandang dengan sudut lembut dan bayangan halus.",
-        "theme": theme_of("#7c3aed", "#e0e7ff", "#1e1b4b", "Humanis", 760),
-        "shape": {"radius": 22, "border_width": 1, "border_color": "#ffffff", "shadow": "0 8px 32px rgba(31,38,135,.2)"},
-        "surface": "#ffffff99", "ink": "inherit",
+        "desc": "Lapisan kaca tembus pandang di atas latar berwarna, sudut lembut dan bayangan halus.",
+        "theme": theme_of("#7c3aed", "#e0e7ff", "#1e1b4b", "Humanis", 760, glass=True, glass_blur=20),
+        "shape": {"radius": 22, "border_width": 1, "border_color": "#ffffff",
+                  "shadow": "0 8px 32px rgba(31,38,135,.2)"},
+        "surface": "rgba(255,255,255,.5)", "ink": "inherit",
     },
     "Neo-brutalism": {
         "desc": "Garis tebal, bayangan keras tanpa blur, warna mencolok.",
@@ -199,9 +200,22 @@ def ref_preview_html(ref):
     surface = ref["surface"]
     ink = ref["ink"] if ref["ink"] != "inherit" else th["text"]
     border = f'{sh["border_width"]}px solid {sh["border_color"]}'
+    # Preset bergaya kaca diberi latar berwarna + blur agar efeknya terlihat.
+    if th.get("glass"):
+        backdrop = (
+            f'background:radial-gradient(240px 140px at 10% -20%, {with_alpha(th["primary"], .55)}, transparent 65%),'
+            f'radial-gradient(220px 150px at 98% 120%, {with_alpha("#ec4899", .40)}, transparent 62%),'
+            f'{esc(th["bg"])};'
+            "-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);"
+        )
+    else:
+        backdrop = f'background:{esc(th["bg"])};'
+    glass = f'background:{esc(surface)};'
+    if th.get("glass"):
+        glass += "-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);"
     return (
-        f'<div class="ref-prev" style="background:{esc(th["bg"])};color:{esc(th["text"])};font-family:{esc(font)}">'
-        f'<div class="ref-card" style="background:{esc(surface)};color:{esc(ink)};border:{esc(border)};'
+        f'<div class="ref-prev" style="{backdrop}color:{esc(th["text"])};font-family:{esc(font)}">'
+        f'<div class="ref-card" style="{glass}color:{esc(ink)};border:{esc(border)};'
         f'border-radius:{sh["radius"]}px;box-shadow:{esc(sh["shadow"])}"><b>Judul kartu</b>'
         f'<span>Contoh teks isi singkat.</span></div>'
         f'<span class="ref-btn" style="background:{esc(th["primary"])};border-radius:{sh["radius"]}px;'

@@ -502,55 +502,8 @@ from css_addons import BAR_CSS_ADDONS  # noqa: E402
 BAR_CSS = BAR_CSS + BAR_CSS_ADDONS
 
 # CSS untuk tampilan aplikasi editor Streamlit itu sendiri.
-APP_CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-#MainMenu, footer, header[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"],
-[data-testid="stStatusWidget"], [data-testid="stAppDeployButton"], [data-testid="stMainMenu"],
-.stAppDeployButton, .stDeployButton, [data-testid="stSidebarCollapsedControl"] {
-  display: none !important; visibility: hidden !important; height: 0 !important; }
-.stApp { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  background: radial-gradient(900px 420px at 8% -8%, rgba(99,102,241,.16), transparent 62%),
-              radial-gradient(800px 380px at 100% 0%, rgba(236,72,153,.12), transparent 60%); }
-.stApp button, .stApp input, .stApp textarea, .stApp [data-baseweb="select"] { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
-.block-container { padding-top: 1.1rem !important; padding-bottom: 1rem !important; max-width: 1920px; }
-h5 { margin-bottom: .2rem; font-weight: 700; }
-.st-key-hero { background: linear-gradient(115deg, #3730a3 0%, #6d28d9 50%, #be185d 115%); border-radius: 20px;
-  padding: 18px 26px !important; box-shadow: 0 14px 34px rgba(79,70,229,.32); }
-.st-key-hero, .st-key-hero * { color: #fff !important; }
-.st-key-hero h2 { margin: 0 !important; padding: 0 !important; font-weight: 700; letter-spacing: -.01em; }
-.st-key-hero [data-testid="stCaptionContainer"] { opacity: .88; }
-.st-key-hero [data-testid="stColumn"]:last-child { text-align: right; }
-.st-key-projbar { border-radius: 16px !important; border: 1px solid rgba(128,128,128,.22) !important; background: rgba(128,128,128,.045); }
-.st-key-panel_left, .st-key-panel_right { border-radius: 18px !important; border: 1px solid rgba(128,128,128,.22) !important;
-  background: rgba(255,255,255,.68); box-shadow: 0 10px 28px rgba(15,23,42,.065); }
-.st-key-panel_left { background: linear-gradient(180deg, rgba(238,242,255,.8), rgba(255,255,255,.82)); }
-.st-key-panel_right { background: linear-gradient(180deg, rgba(250,250,255,.9), rgba(255,255,255,.82)); }
-.st-key-panel_left h4, .st-key-panel_right h4 { margin: 0 0 .15rem; letter-spacing: -.02em; }
-.st-key-panel_left [data-testid="stMetric"] { padding: .55rem .6rem; border: 1px solid rgba(99,102,241,.14);
-  border-radius: 12px; background: rgba(255,255,255,.72); }
-.st-key-panel_left [data-testid="stMetricLabel"] { font-size: .72rem; }
-.st-key-panel_left [data-testid="stMetricValue"] { font-size: 1.25rem; }
-.st-key-panel_left [data-testid="stVerticalBlockBorderWrapper"] { border-radius: 13px; background: rgba(255,255,255,.62); }
-.st-key-panel_right [data-baseweb="tab-list"] { gap: .15rem; }
-.st-key-panel_right [data-baseweb="tab"] { padding: .5rem .55rem; font-size: .78rem; }
-.st-key-panel_right [data-testid="stExpander"] { margin-bottom: .35rem; border-radius: 11px; background: rgba(255,255,255,.62); }
-.st-key-component_library { border-radius: 16px !important; background: rgba(255,255,255,.55); }
-.stButton > button, .stDownloadButton > button { border-radius: 10px; font-weight: 600;
-  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
-.stButton > button:hover, .stDownloadButton > button:hover { transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(99,102,241,.22); border-color: #6366f1; }
-[data-testid="stBaseButton-primary"] { background: linear-gradient(120deg, #6366f1, #8b5cf6) !important; border: 0 !important; color: #fff !important; }
-.stTabs [data-baseweb="tab"] { font-weight: 600; }
-.stTabs [data-baseweb="tab-highlight"] { background-color: #6366f1 !important; height: 3px; border-radius: 3px; }
-.stTabs [aria-selected="true"] { color: #6366f1 !important; }
-[data-testid="stExpander"] { border-radius: 14px; border: 1px solid rgba(128,128,128,.25); }
-.tpl-sws { display: flex; gap: 4px; margin: 2px 0 4px; }
-.tpl-sw { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(128,128,128,.45); }
-.ref-prev { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px;
-  border: 1px solid rgba(128,128,128,.25); margin-bottom: 6px; }
-.ref-card { flex: 1; padding: 8px 10px; display: flex; flex-direction: column; font-size: 13px; }
-.ref-card span { font-size: 12px; opacity: .8; }
-.ref-btn { padding: 8px 12px; font-size: 13px; font-weight: 600; }
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: rgba(128,128,128,.35); border-radius: 8px; }
-"""
+# Tema editor kini bergaya glassmorphism; definisinya ada di css_glass.py supaya
+# mudah disetel ulang lewat token --g-* (blur, warna kaca, garis tepi, bayangan).
+from css_glass import APP_CSS_GLASS, GLASS_PAGE_CSS  # noqa: E402, F401
+
+APP_CSS = APP_CSS_GLASS

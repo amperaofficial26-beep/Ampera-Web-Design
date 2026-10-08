@@ -6,8 +6,12 @@ from config import ELEMENT_DEFAULTS, ELEMENT_LABELS
 from styles import ensure_element_style
 
 
-def theme_of(primary, bg, text, font="Sans-serif modern", width=720):
-    return {"primary": primary, "bg": bg, "text": text, "font": font, "width": width}
+def theme_of(primary, bg, text, font="Sans-serif modern", width=720, glass=False, glass_blur=18):
+    return {
+        "primary": primary, "bg": bg, "text": text, "font": font, "width": width,
+        # glass=True mengaktifkan lapisan glassmorphism pada halaman hasil (css_glass.py).
+        "glass": glass, "glass_blur": glass_blur,
+    }
 
 
 def default_design():
@@ -19,6 +23,8 @@ def default_design():
             "text": "#1f2937",
             "font": "Sans-serif modern",
             "width": 720,
+            "glass": False,
+            "glass_blur": 18,
         },
         "pages": [{"id": uuid.uuid4().hex[:8], "name": "Beranda", "elements": []}],
     }
