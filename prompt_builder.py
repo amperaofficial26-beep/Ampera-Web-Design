@@ -61,6 +61,14 @@ def build_prompt(design, target="HTML/CSS/JavaScript satu file"):
         f'- Warna teks: {theme["text"]}',
         f'- Font: {theme["font"]} ({FONTS.get(theme["font"], "")})',
         f'- Lebar maksimum konten: {theme["width"]}px, diletakkan di tengah',
+    ]
+    if theme.get("glass"):
+        lines.append(
+            "- Terapkan efek glassmorphism: permukaan semi transparan dengan backdrop-filter "
+            f'blur {theme.get("glass_blur", 18)}px, garis tepi putih tipis, sudut membulat, dan bayangan lembut, '
+            "di atas latar gradien berwarna."
+        )
+    lines += [
         "",
         f"## Struktur halaman ({len(design['pages'])} halaman)",
     ]

@@ -336,6 +336,20 @@ with col_right:
             )
             theme["width"] = st.slider("Lebar konten (px)", 360, 1200, int(theme["width"]), step=20)
 
+            st.markdown("##### :material/opacity: Efek kaca")
+            st.caption("Permukaan kaca tembus pandang di atas latar berwarna, diterapkan ke preview dan kode HTML hasil.")
+            theme["glass"] = st.checkbox(
+                "Aktifkan glassmorphism",
+                value=bool(theme.get("glass", False)),
+                help="Menambahkan backdrop-filter, kilau tepi, dan latar gradien berwarna pada halaman hasil.",
+            )
+            theme["glass_blur"] = st.slider(
+                "Kekuatan blur (px)", 4, 40, max(4, min(40, int(theme.get("glass_blur", 18)))), step=2,
+                disabled=not theme["glass"],
+                help="Nilai lebih besar membuat permukaan kaca terlihat lebih lembut dan buram.",
+            )
+            st.caption("Ingin langsung lihat contohnya? Terapkan preset **Gaya → Glassmorphism** atau **Kaca samudra**.")
+
         with tab_file:
             st.download_button(
                 "Unduh desain (.json)",

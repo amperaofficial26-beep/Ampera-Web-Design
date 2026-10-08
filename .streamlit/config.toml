@@ -1,0 +1,15 @@
+# Tema dasar Streamlit yang serasi dengan lapisan glassmorphism di css_glass.py.
+# Warna aksen dan permukaan di sini dipakai widget bawaan; efek kaca diatur CSS.
+[theme]
+base = "light"
+primaryColor = "#6366f1"
+backgroundColor = "#f4f6ff"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#0f172a"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+headless = true

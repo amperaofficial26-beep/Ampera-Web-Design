@@ -39,7 +39,18 @@
 3. Lanjut #3 (component editing)
 4. Terakhir #4 (30 template gaya)
 
-## Status terbaru (6 Oktober 2026)
+## Status terbaru (8 Oktober 2026)
+
+- **Tampilan glassmorphism**: CSS editor (`css_glass.py`) dan halaman hasil diperbarui.
+  Editor memakai latar aurora dengan panel, kartu, tombol, tab, dan kolom isian berbahan kaca;
+  halaman hasil mendapat lapisan kaca yang bisa dinyalakan dari tab **Tema → Efek kaca**
+  (atau preset **Glassmorphism** / **Kaca samudra**) beserta pengatur kekuatan blur 4–40 px.
+- **Berkas baru**: `css_glass.py` (lapisan kaca) dan `.streamlit/config.toml` (warna dasar widget).
+- **Berkas yang diubah**: `css.py`, `design.py`, `design_refs.py`, `design_refs_extra.py`,
+  `html_builder.py`, `prompt_builder.py`, `dnd_components.py`, `app.py`.
+- Desain lama tetap aman: tanpa `glass: True`, HTML hasil identik seperti sebelumnya.
+
+## Status sebelumnya (6 Oktober 2026)
 
 - **#1 Navigasi halaman** dan **#2 tautan internal/eksternal**: sudah tersedia.
 - **#3 Edit komponen**: selesai — seluruh field `BAR_SPECS` diedit otomatis di panel Properti.

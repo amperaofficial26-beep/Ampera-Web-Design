@@ -70,6 +70,18 @@ def align_of(el):
     return el.get("align", "left") if el.get("align") in ALIGNS else "left"
 
 
+def with_alpha(hex_color, alpha):
+    """Ubah warna heksadesimal menjadi rgba() agar bisa ditumpuk sebagai lapisan kaca."""
+    h = str(hex_color).strip().lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    try:
+        r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    except ValueError:
+        return f"rgba(99, 102, 241, {alpha})"
+    return f"rgba({r}, {g}, {b}, {alpha})"
+
+
 def on_color(hex_color):
     """Pilih teks gelap atau terang agar terbaca di atas warna utama."""
     h = str(hex_color).strip().lstrip("#")

@@ -20,17 +20,24 @@ DND_HTML = r'''
 <style>
   .mi { font-family:'Material Symbols Rounded'; font-size:18px; line-height:1; display:inline-block;
     width:1em; overflow:hidden; white-space:nowrap; vertical-align:middle; font-feature-settings:'liga'; }
-  :root { --fg:#31333f; --bg2:#f0f2f6; --accent:#ff4b4b; --line:rgba(128,128,128,.35); }
+  :root { --fg:#0f172a; --bg2:rgba(255,255,255,.62); --accent:#6366f1; --line:rgba(148,163,184,.35);
+    --glass:1px solid rgba(255,255,255,.65); }
   *{box-sizing:border-box} html,body{margin:0;padding:0;background:transparent;color:var(--fg);
     font-family:Inter,system-ui,sans-serif;font-size:13px}
   .title{font-weight:700;margin:2px 0 5px}.hint{opacity:.62;font-size:11px;margin:0 0 8px}
   #list{list-style:none;margin:0;padding:6px;min-height:74px;border:1px dashed var(--line);
-    border-radius:12px;max-height:280px;overflow:auto}
+    border-radius:14px;max-height:280px;overflow:auto;
+    background:rgba(255,255,255,.34);
+    -webkit-backdrop-filter:blur(12px) saturate(150%);backdrop-filter:blur(12px) saturate(150%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
   #list:empty::before{content:"Tarik komponen ke sini, atau pilih komponen di bawah";
     display:block;text-align:center;opacity:.55;padding:26px 8px}
-  #list.ins-empty{border-color:var(--accent);background:var(--bg2)}
-  li{display:flex;align-items:center;gap:7px;padding:8px 9px;margin:0 0 6px;border:1px solid var(--line);
-    border-radius:9px;background:var(--bg2);cursor:grab;user-select:none;position:relative}
+  #list.ins-empty{border-color:var(--accent);background:rgba(99,102,241,.10)}
+  li{display:flex;align-items:center;gap:7px;padding:8px 9px;margin:0 0 6px;border:var(--glass);
+    border-radius:11px;background:var(--bg2);cursor:grab;user-select:none;position:relative;
+    -webkit-backdrop-filter:blur(10px) saturate(150%);backdrop-filter:blur(10px) saturate(150%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 4px 12px rgba(15,23,42,.06)}
+  li:hover{border-color:rgba(99,102,241,.45)}
   li.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
   li.dragging{opacity:.4}
   li.ins-before::before,li.ins-after::after{content:"";position:absolute;left:0;right:0;height:3px;
@@ -123,16 +130,20 @@ PALETTE_HTML = r'''
 <meta charset="utf-8">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
 <style>
-  *{box-sizing:border-box}html,body{margin:0;padding:0;background:transparent;font-family:Inter,system-ui,sans-serif;color:#252733}
-  .dock{border:1px solid rgba(128,128,128,.28);background:rgba(255,255,255,.72);border-radius:16px;padding:10px 12px;
-    box-shadow:0 8px 24px rgba(0,0,0,.06)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0;background:transparent;font-family:Inter,system-ui,sans-serif;color:#0f172a}
+  .dock{border:1px solid rgba(255,255,255,.65);background:rgba(255,255,255,.52);border-radius:18px;padding:10px 12px;
+    -webkit-backdrop-filter:blur(16px) saturate(150%);backdrop-filter:blur(16px) saturate(150%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 12px 30px rgba(31,38,135,.12)}
   .head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
   .title{font-size:13px;font-weight:700}.hint{font-size:11px;opacity:.58}
   .scroll{display:flex;gap:7px;overflow-x:auto;padding:2px 1px 5px;scrollbar-width:thin}
-  .chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(128,128,128,.28);
-    background:#f5f6f8;border-radius:10px;padding:8px 11px;font-size:12px;cursor:pointer;white-space:nowrap;
-    transition:.12s}
-  .chip:hover{transform:translateY(-1px);border-color:#6366f1;background:#eef2ff}
+  .chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.65);
+    background:linear-gradient(180deg,rgba(255,255,255,.78),rgba(255,255,255,.52));border-radius:12px;padding:8px 11px;
+    font-size:12px;cursor:pointer;white-space:nowrap;
+    -webkit-backdrop-filter:blur(10px) saturate(150%);backdrop-filter:blur(10px) saturate(150%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 4px 12px rgba(15,23,42,.06);transition:.14s}
+  .chip:hover{transform:translateY(-1px);border-color:rgba(99,102,241,.6);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 12px 26px rgba(99,102,241,.22)}
   .chip .mi{font-family:'Material Symbols Rounded';font-size:17px;line-height:1}
   .group{flex:0 0 auto;font-size:10px;font-weight:700;opacity:.55;padding:8px 3px 0}
 </style>
@@ -179,9 +190,10 @@ PREVIEW_HTML = r'''
 <!DOCTYPE html>
 <html lang="id">
 <head><meta charset="utf-8"><style>
-html,body{margin:0;width:100%;height:100%;background:#e5e7eb}
+html,body{margin:0;width:100%;height:100%;background:linear-gradient(160deg,#eef2ff,#f8f9ff 45%,#fdf2f8)}
 body{display:flex;justify-content:center;padding:12px;box-sizing:border-box;overflow:hidden}
-iframe{width:100%;height:100%;border:0;background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+iframe{width:100%;height:100%;border:1px solid rgba(255,255,255,.7);background:#fff;border-radius:16px;
+  box-shadow:0 18px 40px rgba(31,38,135,.18),inset 0 1px 0 rgba(255,255,255,.6)}
 </style></head>
 <body><iframe id="preview"></iframe>
 <script>
