@@ -1,7 +1,7 @@
 """UI Builder: titik masuk aplikasi Streamlit (hanya tata letak halaman).
 
 Jalankan dengan:  streamlit run app.py
-Logika dipisah ke modul lain; lihat README.md untuk peta modul.
+Logika dipisah ke paket ui_builder/; lihat README.md untuk peta folder dan fitur.
 """
 import hashlib
 import json
@@ -17,27 +17,27 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-from actions import (  # noqa: E402
+from ui_builder.editor.actions import (  # noqa: E402
     add_element, add_page, apply_design_ref, clear_selection, close_template_preview,
     delete_page, load_design, preview_template, reset_design, use_template,
 )
-from bar_specs import GROUP_ORDER  # noqa: E402
-from bar_specs_addons import COMPONENT_BAR_SPECS  # noqa: E402
-from config import (  # noqa: E402
+from ui_builder.components.specs import GROUP_ORDER  # noqa: E402
+from ui_builder.components.specs.addons import COMPONENT_BAR_SPECS  # noqa: E402
+from ui_builder.core.config import (  # noqa: E402
     DEVICES, ELEMENT_GROUP, ELEMENT_LABELS, FONTS, ICONS, PANEL_HEIGHT,
 )
-from css import APP_CSS  # noqa: E402
-from design import valid_design  # noqa: E402
-from design_refs import DESIGN_REFS, ref_preview_html, swatches_html  # noqa: E402
-from dnd_components import get_dnd_component, get_preview_component, handle_dnd_event, handle_preview_event  # noqa: E402
-from html_builder import build_html  # noqa: E402
-from projects import (  # noqa: E402
+from ui_builder.themes.css import APP_CSS  # noqa: E402
+from ui_builder.core.design import valid_design  # noqa: E402
+from ui_builder.themes.style_refs import DESIGN_REFS, ref_preview_html, swatches_html  # noqa: E402
+from ui_builder.editor.dnd_components import get_dnd_component, get_preview_component, handle_dnd_event, handle_preview_event  # noqa: E402
+from ui_builder.export.html_builder import build_html  # noqa: E402
+from ui_builder.editor.projects import (  # noqa: E402
     autosave_project, current_page, delete_project, init_state, list_projects,
     new_project, rename_project, selected_element, switch_project,
 )
-from prompt_builder import build_prompt  # noqa: E402
-from properties import edit_properties, summary_of  # noqa: E402
-from templates import TEMPLATES, template_design  # noqa: E402
+from ui_builder.export.prompt_builder import build_prompt  # noqa: E402
+from ui_builder.editor.properties import edit_properties, summary_of  # noqa: E402
+from ui_builder.templates.catalog import TEMPLATES, template_design  # noqa: E402
 
 init_state()
 design = st.session_state.design
