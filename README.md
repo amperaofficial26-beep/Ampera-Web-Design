@@ -1,36 +1,78 @@
 # UI Builder (versi modular)
 
-Jalankan: `streamlit run app.py` (semua modul Python berada dalam satu folder).
+Aplikasi Streamlit untuk menyusun halaman dengan seret-lepas, dilengkapi preview langsung, ekspor HTML, dan teks **Prompt Master AI**.
 
-## Peta modul
+Jalankan dari root repo:
 
-| File | Isi | Ubah kalau mau... |
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+## Struktur folder
+
+```
+Ampera-Web-Design/
+├── app.py                        # titik masuk aplikasi (hanya tata letak halaman)
+├── README.md                     # dokumen ini
+├── requirements.txt
+├── docs/
+│   └── FEATURES_PLAN.md          # rencana fitur dan catatan status
+├── .streamlit/config.toml        # tema dasar widget Streamlit
+├── .devcontainer/                # pengaturan Dev Container / Codespaces
+└── ui_builder/                   # seluruh kode aplikasi, dikelompokkan per fitur
+    ├── core/                     # fondasi tanpa tampilan
+    │   ├── config.py             # label, nilai bawaan, font, perangkat, grup, folder proyek
+    │   ├── design.py             # struktur desain bawaan dan validasi
+    │   ├── element_style.py      # gaya visual per elemen (garis, bayangan, padding)
+    │   └── utils.py              # fungsi bantu (escape HTML, URL aman, warna)
+    ├── editor/                   # layar editor Streamlit
+    │   ├── actions.py            # callback tombol: elemen, halaman, template, gaya
+    │   ├── dnd_components.py     # Susunan seret-lepas dan preview interaktif
+    │   ├── projects.py           # simpan/muat proyek, autosave, state sesi
+    │   └── properties.py         # panel Properti
+    ├── components/               # katalog 182 komponen
+    │   ├── specs/                # data: label, grup, nilai bawaan, field
+    │   ├── render/               # HTML tiap komponen bar
+    │   └── css/                  # gaya CSS tiap komponen bar
+    ├── templates/                # 84 template desain siap pakai
+    │   ├── catalog.py            # katalog utama (54) + penggabungan galeri
+    │   └── gallery.py            # 30 template galeri tambahan
+    ├── themes/                   # tema dan gaya
+    │   ├── css.py                # penyusun CSS gabungan (preview, ekspor, editor)
+    │   ├── glass.py              # lapisan glassmorphism
+    │   ├── style_refs.py         # daftar 56 referensi gaya
+    │   └── style_refs_extra.py   # 30 referensi gaya tambahan
+    └── export/                   # hasil akhir
+        ├── html_builder.py       # HTML untuk preview dan unduhan
+        └── prompt_builder.py     # teks Prompt Master AI
+```
+
+Aturan singkat:
+
+- **Root hanya berisi titik masuk, dokumentasi, dan konfigurasi.** Semua kode aplikasi ada di `ui_builder/`.
+- **Satu folder = satu fitur.** Folderlah yang memberi konteks, jadi nama berkas tidak perlu awalan seperti `bars_` atau `css_`.
+- **Folder `projects/`** dibuat otomatis saat aplikasi berjalan (di root, diabaikan Git). Lokasinya diatur di `ui_builder/core/config.py`.
+
+## Peta fitur
+
+| Fitur | Lokasi | Ubah kalau mau... |
 |---|---|---|
-| `app.py` | Tata letak halaman Streamlit, panel editor, katalog, dan pencarian | mengubah susunan panel/tab/tombol |
-| `config.py` | Label, nilai bawaan elemen, font, perangkat, dan grup | menambah elemen dasar, font, atau ukuran perangkat |
-| `bar_specs.py` | Gabungan spesifikasi **170 komponen bar** | melihat katalog gabungan |
-| `bar_specs_pro.py` | Spesifikasi **50 komponen Pro** | mengubah komponen paket Pro |
-| `bar_specs_addons.py` | Spesifikasi **50 komponen tambahan terbaru** | menambah/mengubah field komponen tambahan |
-| `bars.py` | Dispatcher renderer, deskripsi prompt, dan editor field | mengubah alur render/editor komponen |
-| `bars_extra.py` | Renderer untuk **50 komponen tambahan** | mengubah render paket komponen tambahan lama |
-| `bars_pro.py` | Renderer **50 komponen Pro** | mengubah render komponen Pro |
-| `bars_addons.py` | Renderer **50 komponen tambahan terbaru** | mengubah tampilan HTML komponen terbaru |
-| `css.py` | CSS gabungan untuk preview/hasil dan editor Streamlit | mengubah tema tampilan |
-| `css_glass.py` | **Lapisan glassmorphism**: tema editor (`APP_CSS_GLASS`) dan efek kaca halaman hasil (`GLASS_PAGE_CSS`) | mengubah blur, warna kaca, garis tepi, bayangan |
-| `css_pro.py` | CSS untuk 50 komponen Pro | mengubah gaya paket Pro |
-| `css_addons.py` | CSS untuk 50 komponen tambahan terbaru | mengubah gaya komponen terbaru |
-| `templates.py` | **84 template** dan fungsi pembantu `H`, `P`, `B`, `BAR`, dst. | menambah template siap pakai |
-| `gallery_templates.py` | **30 template galeri tambahan** (total 50 template kategori Galeri) | menambah koleksi khusus galeri |
-| `design_refs.py` | Gabungan **56 referensi gaya desain** | mengubah katalog gaya yang bisa diterapkan |
-| `design_refs_extra.py` | **30 referensi gaya tambahan** | menambah palet dan bentuk baru |
-| `design.py` | Struktur desain, desain bawaan, dan validasi | mengubah format desain |
-| `styles.py` | Gaya visual per elemen (garis, bayangan, padding, dll.) | mengubah penerapan gaya elemen |
-| `projects.py` | Simpan/muat proyek, autosave, dan state sesi | mengubah penyimpanan proyek |
-| `actions.py` | Callback untuk elemen, halaman, template, dan gaya | mengubah perilaku tombol |
-| `html_builder.py` | Renderer desain menjadi HTML preview/ekspor | mengubah hasil HTML |
-| `prompt_builder.py` | Generator Prompt Master AI | mengubah format prompt |
-| `dnd_components.py` | Susunan seret-lepas, preview, dan penangan event | mengubah komponen interaktif |
-| `properties.py` | Panel properti dan editor gaya | mengubah editor elemen |
+| Layar utama: bagian judul, panel Halaman, tab Preview / Kode HTML / Prompt AI, panel kanan, pustaka | `app.py` | mengubah susunan panel, tab, dan tombol |
+| Susunan elemen dan preview interaktif | `ui_builder/editor/dnd_components.py` | mengubah seret-lepas atau klik di preview |
+| Panel Properti (isi, gaya, naik/turun, gandakan, hapus) | `ui_builder/editor/properties.py` | mengubah field setiap elemen |
+| Aksi tombol: tambah, hapus, gandakan, halaman, template, gaya | `ui_builder/editor/actions.py` | mengubah perilaku tombol |
+| Proyek: simpan, muat, autosave, daftar proyek | `ui_builder/editor/projects.py` | mengubah penyimpanan proyek |
+| Katalog 182 komponen | `ui_builder/components/` | menambah atau mengubah komponen |
+| Template desain (84) | `ui_builder/templates/` | menambah template siap pakai |
+| Referensi gaya (56) | `ui_builder/themes/style_refs*.py` | menambah palet dan bentuk gaya |
+| Tema dan efek kaca | `ui_builder/themes/glass.py`, `css.py` | mengubah blur, warna kaca, bayangan |
+| HTML preview dan ekspor | `ui_builder/export/html_builder.py` | mengubah hasil HTML |
+| Prompt Master AI | `ui_builder/export/prompt_builder.py` | mengubah format prompt |
+| Konfigurasi: label, font, perangkat, grup | `ui_builder/core/config.py` | menambah font atau ukuran perangkat |
+| Struktur desain dan validasi | `ui_builder/core/design.py` | mengubah format desain |
+| Gaya visual per elemen | `ui_builder/core/element_style.py` | mengubah penerapan gaya elemen |
+| Tema dasar widget Streamlit | `.streamlit/config.toml` | mengubah warna dasar widget |
 
 ## Katalog komponen
 
@@ -51,6 +93,19 @@ Ada **170 komponen bar** dan **12 elemen dasar**, total **182 komponen**. Penamb
 | Peta & Lokasi | 4 | lokasi, rute, tempat terdekat, absensi |
 | Dasar | 11 | judul, paragraf, tombol, gambar, galeri, kartu, formulir, footer |
 
+### Empat paket komponen bar
+
+Setiap paket punya tiga berkas dengan nama yang sama di folder `specs/`, `render/`, dan `css/`:
+
+| Paket | Jumlah | Spesifikasi | Renderer HTML | CSS |
+|---|---:|---|---|---|
+| Inti | 20 | `specs/core.py` | `render/core.py` (juga dispatcher) | `css/core.py` |
+| Tambahan lama | 50 | `specs/extra.py` | `render/extra.py` | `css/extra.py` |
+| Pro | 50 | `specs/pro.py` | `render/pro.py` | `css/pro.py` |
+| Tambahan terbaru | 50 | `specs/addons.py` | `render/addons.py` | `css/addons.py` |
+
+`specs/__init__.py` menggabungkan keempat paket menjadi satu `BAR_SPECS` berisi 170 entri. Dari sana, panel Properti, preview, dan Prompt Master AI membaca data yang sama.
+
 ## Template dan referensi gaya
 
 - **84 template** total, termasuk **50 template kategori Galeri** (20 yang sudah ada + 30 tambahan).
@@ -63,22 +118,70 @@ Ada **170 komponen bar** dan **12 elemen dasar**, total **182 komponen**. Penamb
 
 Seluruh editor dan halaman hasil memakai bahasa desain kaca (*glassmorphism*):
 
-- **Editor Streamlit** — latar aurora berwarna dengan panel, kartu, tombol, tab, kolom isian,
-  dan dropdown berbahan kaca (`backdrop-filter`, garis tepi putih tipis, kilau tepi, bayangan lembut).
-  Semua warna kaca diatur lewat token `--g-*` di `css_glass.py`, dan warna dasar widget
-  diselaraskan melalui `.streamlit/config.toml`.
-- **Halaman hasil (preview & ekspor)** — aktifkan di **Tema → Efek kaca** atau dengan
-  menerapkan preset **Glassmorphism** / **Kaca samudra**. Lapisan kaca menambahkan latar
-  gradien berwarna, bulatan cahaya blur yang bergerak halus, serta efek buram pada kartu,
-  menu navigasi, tombol, dan kolom isian. Kekuatan blur diatur `theme["glass_blur"]`
-  (4–40 px) dan dikirim ke HTML sebagai variabel `--glass-blur`.
-- Kompatibilitas dijaga: `@supports not (backdrop-filter)` menyediakan permukaan lebih pekat,
-  animasi dinonaktifkan saat perangkat memakai `prefers-reduced-motion`, dan desain tanpa
-  `glass: True` tetap tampil persis seperti sebelumnya.
+- **Editor Streamlit**: latar aurora berwarna dengan panel, kartu, tombol, tab, kolom isian, dan dropdown berbahan kaca (`backdrop-filter`, garis tepi putih tipis, kilau tepi, bayangan lembut). Semua warna kaca diatur lewat token `--g-*` di `ui_builder/themes/glass.py`, dan warna dasar widget diselaraskan melalui `.streamlit/config.toml`.
+- **Halaman hasil (preview & ekspor)**: aktifkan di **Tema → Efek kaca** atau dengan menerapkan preset **Glassmorphism** / **Kaca samudra**. Lapisan kaca menambahkan latar gradien berwarna, bulatan cahaya blur yang bergerak halus, serta efek buram pada kartu, menu navigasi, tombol, dan kolom isian. Kekuatan blur diatur `theme["glass_blur"]` (4–40 px) dan dikirim ke HTML sebagai variabel `--glass-blur`.
+- Kompatibilitas dijaga: `@supports not (backdrop-filter)` menyediakan permukaan lebih pekat, animasi dinonaktifkan saat perangkat memakai `prefers-reduced-motion`, dan desain tanpa `glass: True` tetap tampil persis seperti sebelumnya.
 - Prompt Master AI ikut menyebutkan efek kaca beserta nilai blur-nya saat fitur ini aktif.
 
 ## Menambah komponen
 
-Spesifikasi komponen bar menyediakan label, grup, nilai bawaan, dan field yang langsung dipakai panel Properti serta Prompt Master AI. Untuk paket tambahan terbaru, tambahkan entri di `bar_specs_addons.py`, renderer di `bars_addons.py`, lalu gaya CSS di `css_addons.py`.
+### Komponen bar baru (paket tambahan terbaru)
+
+1. **Spesifikasi**: tambahkan entri di `ui_builder/components/specs/addons.py` (label, ikon, grup, nilai bawaan, field, dan `renderer` yang menentukan jenis tampilan). Panel Properti dan Prompt Master AI langsung memakai data ini.
+2. **Renderer**: pilih jenis tampilan yang sudah ada di `render_catalog_bar()` (`ui_builder/components/render/addons.py`), atau tambahkan cabang baru di fungsi itu.
+3. **CSS**: tambahkan gaya di `ui_builder/components/css/addons.py`. Semua selector dibatasi pada `.addonbar`.
 
 Komponen bar baru otomatis masuk ke pustaka, dapat dicari dan difilter berdasarkan grup, serta dapat dipakai pada template atau desain sendiri.
+
+### Paket lain
+
+Paket Pro dan tambahan lama mengikuti pola yang sama: spesifikasi di `specs/pro.py` atau `specs/extra.py`, fungsi render didaftarkan di `PRO_BAR_RENDERERS` (`render/pro.py`) atau `EXTRA_BAR_RENDERERS` (`render/extra.py`), dan CSS di `css/pro.py` atau `css/extra.py`. Grup baru untuk paket Pro didaftarkan di `PRO_GROUP_ORDER`.
+
+### Elemen dasar
+
+Elemen dasar (judul, teks, tombol, dan seterusnya) berjumlah 12. Label, grup, dan nilai bawaannya ada di `ui_builder/core/config.py`, render HTML di `ui_builder/export/html_builder.py`, dan panel Properti di `ui_builder/editor/properties.py`.
+
+### Template dan referensi gaya
+
+- Template baru: tambahkan entri di `ui_builder/templates/catalog.py`, atau di `gallery.py` untuk koleksi galeri.
+- Referensi gaya baru: tambahkan di `ui_builder/themes/style_refs_extra.py`.
+
+## Perubahan struktur (dari versi sebelumnya)
+
+Versi sebelumnya menaruh semua modul Python datar di root. Pemetaan berkas lama ke lokasi baru:
+
+| Berkas lama | Lokasi baru |
+|---|---|
+| `app.py` | `app.py` (tetap di root) |
+| `config.py` | `ui_builder/core/config.py` |
+| `utils.py` | `ui_builder/core/utils.py` |
+| `design.py` | `ui_builder/core/design.py` |
+| `styles.py` | `ui_builder/core/element_style.py` |
+| `actions.py` | `ui_builder/editor/actions.py` |
+| `projects.py` | `ui_builder/editor/projects.py` |
+| `properties.py` | `ui_builder/editor/properties.py` |
+| `dnd_components.py` | `ui_builder/editor/dnd_components.py` |
+| `bar_specs.py` | `ui_builder/components/specs/` (dipecah: `core.py`, `extra.py`, `common.py`; `__init__.py` menggabungkan) |
+| `bar_specs_pro.py` | `ui_builder/components/specs/pro.py` |
+| `bar_specs_addons.py` | `ui_builder/components/specs/addons.py` |
+| `bars.py` | `ui_builder/components/render/core.py` |
+| `bars_extra.py` | `ui_builder/components/render/extra.py` |
+| `bars_pro.py` | `ui_builder/components/render/pro.py` |
+| `bars_addons.py` | `ui_builder/components/render/addons.py` |
+| `css.py` | `ui_builder/themes/css.py` (penyusun) dan `ui_builder/components/css/core.py`, `extra.py` |
+| `css_pro.py` | `ui_builder/components/css/pro.py` |
+| `css_addons.py` | `ui_builder/components/css/addons.py` |
+| `css_glass.py` | `ui_builder/themes/glass.py` |
+| `templates.py` | `ui_builder/templates/catalog.py` |
+| `gallery_templates.py` | `ui_builder/templates/gallery.py` |
+| `design_refs.py` | `ui_builder/themes/style_refs.py` |
+| `design_refs_extra.py` | `ui_builder/themes/style_refs_extra.py` |
+| `html_builder.py` | `ui_builder/export/html_builder.py` |
+| `prompt_builder.py` | `ui_builder/export/prompt_builder.py` |
+| `FEATURES_PLAN.md` | `docs/FEATURES_PLAN.md` |
+
+Catatan:
+
+- Logika tidak diubah. Yang berubah hanya lokasi berkas, impor (`from ui_builder....`), dan komentar. `bar_specs.py` dan `css.py` dipecah per paket tanpa mengubah isi datanya.
+- Modul lama di root tidak lagi tersedia sebagai impor. Jika ada skrip lain yang mengimpornya, perbarui ke jalur baru.
+- `.streamlit/config.toml`, `.devcontainer/`, dan perintah `streamlit run app.py` tidak berubah.

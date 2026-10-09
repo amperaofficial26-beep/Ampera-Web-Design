@@ -1,4 +1,4 @@
-# Tema dasar Streamlit yang serasi dengan lapisan glassmorphism di css_glass.py.
+# Tema dasar Streamlit yang serasi dengan lapisan glassmorphism di ui_builder/themes/glass.py.
 # Warna aksen dan permukaan di sini dipakai widget bawaan; efek kaca diatur CSS.
 [theme]
 base = "light"
